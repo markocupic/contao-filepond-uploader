@@ -1,0 +1,41 @@
+<?php $this->extend('form_row'); ?>
+
+<?php $this->block('label'); ?>
+<?php if ($this->label): ?>
+<label for="ctrl_<?= $this->id ?>"<?php if ($this->class): ?> class="<?= $this->class ?>"<?php endif; ?>>
+<?php if ($this->mandatory): ?>
+<span class="invisible"><?= $this->mandatoryField ?> </span><?= $this->label ?><span class="mandatory">*</span>
+<?php else: ?>
+<?= $this->label ?>
+<?php endif; ?>
+</label>
+<?php endif; ?>
+<?php $this->endblock(); ?>
+
+<?php $this->block('field'); ?>
+<?php if ($this->hasErrors()): ?>
+<p class="error"><?= $this->getErrorAsString() ?></p>
+<?php endif; ?>
+
+<div id="filepond-widget-<?= $this->id ?>" class="filepond-wrapper">
+  <input type="file" class="filepond" data-allow-reorder="true"/>
+
+  <script>
+      document.addEventListener('DOMContentLoaded', () => {
+
+          if (typeof FilePond === undefined || typeof FilePond !== 'object') {
+              return;
+          }
+
+          const id = '<?= $this->id ?>';
+          const jsConfig = JSON.parse('<?= json_encode($this->jsConfig) ?>');
+          const name = '<?= $this->name ?>';
+          const widget = document.querySelector('#filepond-widget-' + id + ' input.filepond');
+
+          const filePond = new ContaoFilepondPlugin(widget, name, jsConfig, FilePond);
+          filePond.run();
+      });
+  </script>
+</div>
+
+<?php $this->endblock(); ?>
