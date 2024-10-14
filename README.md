@@ -1,8 +1,12 @@
-![Alt text](docs/logo.png?raw=true "logo")
+<img src="docs/logo.png?raw=true" alt="marko cupic" width="200">
 
-# Welcome to Contao Filepond Uploader
+# [Filepond file uploader](https://pqina.nl/filepond) for Contao CMS
+### <span style="color:red">Not ready for use in production!</span>
 
+![Filepond](docs/filepond.png)
 
+This extension provides a Contao frontend form widget for default usage.
+For special use cases you can embed the widget within a Codefog Haste Form (see below).
 
 ## Create the form widget from DCA
 
