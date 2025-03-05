@@ -1,4 +1,8 @@
 class ContaoFilepondPlugin {
+    wrapper = null;
+    widget = null;
+    name = null;
+    jsConfig = null;
     #allowMultiple = false;
     #pond = null;
     #options = {};
@@ -19,6 +23,7 @@ class ContaoFilepondPlugin {
      * @param pond
      */
     constructor(widget, name, jsConfig, pond) {
+        this.wrapper = widget.closest('.filepond-wrapper');
         this.widget = widget;
         this.name = name;
         this.jsConfig = jsConfig;
@@ -160,9 +165,21 @@ class ContaoFilepondPlugin {
             instantUpload: true,
             allowMultiple: this.#allowMultiple,
             allowFileTypeValidation: true,
-            onaddfile: (err, item) => {
-                item.setMetadata('itemId', item.id);
+
+            // Add callbacks
+            oninit: () => {
+                this.#oninit();
             },
+            onaddfilestart: (file) => {
+                this.#onaddfilestart(file);
+            },
+            onprocessfile: (err, file) => {
+                this.#onprocessfile(err, file);
+            },
+            onaddfile: (err, item) => {
+                this.#onaddfile(err, item);
+            },
+
             server: {
                 process: (fieldName, file, metadata, load, error, progress, abort, transfer, options) => {
                     // Get the item id from metadata (added in onaddfile())
@@ -279,23 +296,43 @@ class ContaoFilepondPlugin {
             this.#options.imageResizeMode = this.jsConfig.imageResizeMode;
             this.#options.imageResizeUpscale = this.jsConfig.imageResizeUpscale;
         }
+    }
 
-        document.addEventListener('FilePond:processfile', (e) => {
+    #oninit() {
+        // Add a class to the wrapper element when Filepond is initialized
+        this.wrapper.classList.add('filepond--is-ready');
 
-            // Inject error message from server to the list item
-            if (e.detail.error.body !== undefined && e.detail.error.body !== '') {
-                const error = e.detail.error.body;
-
-                const itemId = e.detail.file.id;
-                const fileStatusMain = document.querySelector('#filepond--item-' + itemId + ' .filepond--file-status-main');
-                if (fileStatusMain) {
-                    const errorBox = document.createElement('span');
-                    errorBox.setAttribute('class', 'filepond--contao-error');
-                    errorBox.setAttribute('style', 'font-size: 0.75rem')
-                    errorBox.innerText = error;
-                    fileStatusMain.parentNode.insertBefore(errorBox, fileStatusMain.nextSibling);
-                }
+        // Hack: Remove the CSS marker class when the upload is done
+        setInterval(() => {
+            if (!this.wrapper.querySelector('.filepond--item[data-filepond-item-state="busy processing"]')) {
+                this.wrapper.classList.remove('filepond--is-busy');
             }
-        });
+        }, 1000);
+    }
+
+    #onaddfile(err, item) {
+        item.setMetadata('itemId', item.id);
+    }
+
+    #onaddfilestart(file) {
+        // Add the CSS marker class when the upload starts
+        this.wrapper.classList.add('filepond--is-busy');
+    }
+
+    #onprocessfile(err, file) {
+        // Inject error message from server to the list item
+        if (err?.body !== undefined && err?.body !== '') {
+            const error = err.body;
+
+            const itemId = file.id;
+            const fileStatusMain = document.querySelector('#filepond--item-' + itemId + ' .filepond--file-status-main');
+            if (fileStatusMain) {
+                const errorBox = document.createElement('span');
+                errorBox.setAttribute('class', 'filepond--contao-error');
+                errorBox.setAttribute('style', 'font-size: 0.75rem')
+                errorBox.innerText = error;
+                fileStatusMain.parentNode.insertBefore(errorBox, fileStatusMain.nextSibling);
+            }
+        }
     }
 }

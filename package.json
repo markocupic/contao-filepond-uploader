@@ -9,7 +9,7 @@
     },
     "license": "MIT",
     "dependencies": {
-        "filepond": "^4.31.3",
+        "filepond": "^4.32.5",
         "filepond-plugin-file-validate-size": "^2.2",
         "filepond-plugin-file-validate-type": "^1.2",
         "filepond-plugin-image-edit": "^1.6",
