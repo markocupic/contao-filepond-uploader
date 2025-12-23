@@ -24,13 +24,21 @@ use Symfony\Component\Finder\SplFileInfo;
 class FileUpload extends \Contao\FileUpload
 {
     protected string|null $transferKey = null;
+
     protected bool $doNotOverwrite = false;
+
     protected array $extensions = [];
+
     protected int $minFileSize = 0;
+
     protected int $maxFileSize;
+
     protected int $imageWidth;
+
     protected int $imageHeight;
+
     protected int $gdMaxImgWidth;
+
     protected int $gdMaxImgHeight;
 
     /**
@@ -244,7 +252,7 @@ class FileUpload extends \Contao\FileUpload
 
             foreach ($files as $k => $file) {
                 if (!$file['error'] && $file['size'] < $this->minFileSize) {
-                    Message::addError(sprintf($GLOBALS['TL_LANG']['ERR']['minFileSize'], $minlength_kb_readable));
+                    Message::addError(\sprintf($GLOBALS['TL_LANG']['ERR']['minFileSize'], $minlength_kb_readable));
                     $this->blnHasError = true;
                     unset($files[$k]);
                 }
@@ -256,16 +264,16 @@ class FileUpload extends \Contao\FileUpload
 
     protected function resizeUploadedImage($strImage): bool
     {
-        //$imageWidth = Config::get('imageWidth');
-        //$imageHeight = Config::get('imageHeight');
-        //$gdMaxImgWidth = Config::get('gdMaxImgWidth');
-        //$gdMaxImgHeight = Config::get('gdMaxImgHeight');
+        // $imageWidth = Config::get('imageWidth');
+        // $imageHeight = Config::get('imageHeight');
+        // $gdMaxImgWidth = Config::get('gdMaxImgWidth');
+        // $gdMaxImgHeight = Config::get('gdMaxImgHeight');
 
         // Override temporarily the Contao local config image width configuration.
-        //Config::set('imageWidth', $this->imageWidth);
-        //Config::set('imageHeight', $this->imageHeight);
-        //Config::set('gdMaxImgWidth', $this->gdMaxImgWidth);
-        //Config::set('gdMaxImgHeight', $this->gdMaxImgHeight);
+        // Config::set('imageWidth', $this->imageWidth);
+        // Config::set('imageHeight', $this->imageHeight);
+        // Config::set('gdMaxImgWidth', $this->gdMaxImgWidth);
+        // Config::set('gdMaxImgHeight', $this->gdMaxImgHeight);
 
         return parent::resizeUploadedImage($strImage);
     }

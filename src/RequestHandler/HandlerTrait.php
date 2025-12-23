@@ -23,7 +23,7 @@ use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-//use Terminal42\FineUploaderBundle\Event\WidgetReloadEvent;
+// use Terminal42\FineUploaderBundle\Event\WidgetReloadEvent;
 use Symfony\Component\HttpFoundation\Response;
 
 trait HandlerTrait

@@ -52,7 +52,7 @@ class FrontendWidget extends BaseWidget
      */
     public function __construct($attributes = null)
     {
-        if (!empty($attributes['id']) && null !== ($formFieldModel = FormFieldModel::findByPk($attributes['id']))) {
+        if (!empty($attributes['id']) && null !== ($formFieldModel = FormFieldModel::findById($attributes['id']))) {
             $this->arrConfiguration = array_merge($this->arrConfiguration, $formFieldModel->row());
         }
 
@@ -70,7 +70,7 @@ class FrontendWidget extends BaseWidget
 
         // Clean the chunks session when the widget is initialized in a non-ajax request
         if (!$request->isXmlHttpRequest()) {
-            //$this->container->get('terminal42_fineuploader.chunk_uploader')->clearSession($this);
+            // $this->container->get('terminal42_fineuploader.chunk_uploader')->clearSession($this);
         }
 
         if ($request->isXmlHttpRequest()) {
@@ -83,21 +83,18 @@ class FrontendWidget extends BaseWidget
             }
         }
 
-        //$response = $this->container->get('terminal42_fineuploader.request.frontend_handler')->handleWidgetInitRequest(
-        //$this->container->get('request_stack')->getCurrentRequest(),
-        //$this
-        //);
+        // $response = $this->container->get('terminal42_fineuploader.request.frontend_handler')->handleWidgetInitRequest(
+        // $this->container->get('request_stack')->getCurrentRequest(),
+        // $this
+        // );
 
-        //if (null !== $response) {
-        //throw new ResponseException($response);
-        //}
+        // if (null !== $response) {
+        // throw new ResponseException($response);
+        // }
     }
 
     /**
      * Set the widget property.
-     *
-     * @param $strKey
-     * @param $varValue
      */
     public function __set($strKey, $varValue): void
     {
@@ -157,7 +154,7 @@ class FrontendWidget extends BaseWidget
                 }
                 break;
 
-            /** @noinspection PhpMissingBreakStatementInspection */
+                /** @noinspection PhpMissingBreakStatementInspection */
             case 'mandatory':
                 if ($varValue) {
                     $this->arrAttributes['required'] = 'required';
@@ -187,11 +184,11 @@ class FrontendWidget extends BaseWidget
     public function parse($arrAttributes = null): string
     {
         // Initiate the session if chunking is enabled (#86).
-        //if ($this->getUploaderConfig()->isChunkingEnabled()) {
-        ///** @var ChunkUploader $chunkUploader */
-        //$chunkUploader = $this->container->get('terminal42_fineuploader.chunk_uploader');
-        //$chunkUploader->initSession($this);
-        //}
+        // if ($this->getUploaderConfig()->isChunkingEnabled()) {
+        // /** @var ChunkUploader $chunkUploader */
+        // $chunkUploader = $this->container->get('terminal42_fineuploader.chunk_uploader');
+        // $chunkUploader->initSession($this);
+        // }
 
         if (!$this->jsConfig) {
             $this->jsConfig = $this->getConfigGenerator()->generateJavaScriptConfig($this->getUploaderConfig());

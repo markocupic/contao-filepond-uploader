@@ -22,7 +22,7 @@ use Markocupic\ContaoFilepondUploader\Widget\FrontendWidget;
 #[AsHook('prepareFormData')]
 class PrepareFormDataListener
 {
-    public function __invoke(array &$submittedData, array $labels, array $fields, Form $form, array &$files = null): void
+    public function __invoke(array &$submittedData, array $labels, array $fields, Form $form, ?array &$files = null): void
     {
         /** @var FormFieldModel $model */
         foreach ($fields as $name => $model) {

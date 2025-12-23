@@ -30,9 +30,6 @@ class MarkocupicContaoFilepondUploader extends Bundle
         return new MarkocupicContaoFilepondUploaderExtension();
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function build(ContainerBuilder $container): void
     {
         parent::build($container);

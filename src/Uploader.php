@@ -94,7 +94,7 @@ class Uploader
             }
         } else {
             // The file does not exist
-            throw new \Exception(sprintf('The file "%s" does not exist', $file));
+            throw new \Exception(\sprintf('The file "%s" does not exist', $file));
         }
 
         return $file;
@@ -116,7 +116,7 @@ class Uploader
 
             // Collect the errors
             if ($uploader->hasError()) {
-                $errors = $this->requestStack->getSession()->getFlashBag()->peek(sprintf('contao.%s.error', $scope));
+                $errors = $this->requestStack->getSession()->getFlashBag()->peek(\sprintf('contao.%s.error', $scope));
 
                 foreach ($errors as $error) {
                     $widget->addError($error);
@@ -202,6 +202,6 @@ class Uploader
         }
 
         $_FILES[$widget->name] = $file;
-        //unset($_FILES[$name]); // Unset the temporary file
+        // unset($_FILES[$name]); // Unset the temporary file
     }
 }

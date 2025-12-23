@@ -47,7 +47,7 @@ class FileUploadListener
                     'filePondItemId' => $event->getRequest()->attributes->get('filePondItemId'),
                     'error' => $GLOBALS['TL_LANG']['ERR']['general'],
                     'preventRetry' => true,
-                ])
+                ]),
             );
 
             return;
@@ -65,7 +65,7 @@ class FileUploadListener
                         'filePondItemId' => $event->getRequest()->attributes->get('filePondItemId'),
                         'error' => $GLOBALS['TL_LANG']['ERR']['general'],
                         'preventRetry' => true,
-                    ])
+                    ]),
                 );
 
                 return;
@@ -116,22 +116,22 @@ class FileUploadListener
 
             // Image width is smaller than the minimum image width
             if ($minWidth > 0 && $file->width < $minWidth) {
-                $widget->addError(sprintf($GLOBALS['TL_LANG']['ERR']['fileminwidth'], '', $minWidth));
+                $widget->addError(\sprintf($GLOBALS['TL_LANG']['ERR']['fileminwidth'], '', $minWidth));
             }
 
             // Image height is smaller than the minimum image height
             if ($minHeight > 0 && $file->height < $minHeight) {
-                $widget->addError(sprintf($GLOBALS['TL_LANG']['ERR']['fileminheight'], '', $minHeight));
+                $widget->addError(\sprintf($GLOBALS['TL_LANG']['ERR']['fileminheight'], '', $minHeight));
             }
 
             // Image exceeds maximum image width
             if ($maxWidth > 0 && $file->width > $maxWidth) {
-                $widget->addError(sprintf($GLOBALS['TL_LANG']['ERR']['filewidth'], '', $maxWidth));
+                $widget->addError(\sprintf($GLOBALS['TL_LANG']['ERR']['filewidth'], '', $maxWidth));
             }
 
             // Image exceeds maximum image height
             if ($maxHeight > 0 && $file->height > $maxHeight) {
-                $widget->addError(sprintf($GLOBALS['TL_LANG']['ERR']['fileheight'], '', $maxHeight));
+                $widget->addError(\sprintf($GLOBALS['TL_LANG']['ERR']['fileheight'], '', $maxHeight));
             }
         }
     }

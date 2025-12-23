@@ -117,7 +117,7 @@ class Filesystem
 
         // Try to rename the file
         if (!$files->rename($file, $new)) {
-            throw new \Exception(sprintf('The file "%s" could not be renamed to "%s"', $file, $new));
+            throw new \Exception(\sprintf('The file "%s" could not be renamed to "%s"', $file, $new));
         }
 
         // Set the default CHMOD
@@ -161,7 +161,7 @@ class Filesystem
         // Find the files with the same extension
         $files = preg_grep(
             '/^'.preg_quote($name, '/').'.*\.'.preg_quote($pathinfo['extension'], '/').'/',
-            $allFiles
+            $allFiles,
         );
 
         foreach ($files as $file) {

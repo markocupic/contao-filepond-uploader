@@ -23,7 +23,7 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-//use Terminal42\FineUploaderBundle\Widget\BackendWidget;
+// use Terminal42\FineUploaderBundle\Widget\BackendWidget;
 use Symfony\Component\HttpFoundation\Response;
 
 #[Autoconfigure(public: true)]
@@ -58,7 +58,7 @@ class BackendHandler
                 'id' => $dc->id,
                 'name' => $request->request->get('name'),
             ],
-            $dc
+            $dc,
         );
 
         return $this->getUploadResponse($this->eventDispatcher, $request, $widget);
@@ -87,7 +87,7 @@ class BackendHandler
 
         // The field does not exist
         if (!isset($dca['fields'][$field])) {
-            throw new \Exception(sprintf('Field "%s" does not exist in DCA "%s"', $field, $dc->table));
+            throw new \Exception(\sprintf('Field "%s" does not exist in DCA "%s"', $field, $dc->table));
         }
 
         // Call the load_callback
@@ -127,11 +127,11 @@ class BackendHandler
         if ('File' === $dca['config']['dataContainer']) {
             $value = $GLOBALS['TL_CONFIG'][$field];
         } elseif ($id > 0 && $db->tableExists($dc->table)) {
-            $row = $db->prepare(sprintf('SELECT * FROM %s WHERE id=?', $dc->table))->execute($id);
+            $row = $db->prepare(\sprintf('SELECT * FROM %s WHERE id=?', $dc->table))->execute($id);
 
             // The record does not exist
             if ($row->numRows < 1) {
-                throw new \InvalidArgumentException(sprintf('A record with the ID "%s" does not exist in table "%s"', $id, $dc->table));
+                throw new \InvalidArgumentException(\sprintf('A record with the ID "%s" does not exist in table "%s"', $id, $dc->table));
             }
 
             $value = $row->$field;

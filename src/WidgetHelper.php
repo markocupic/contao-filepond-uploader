@@ -80,7 +80,7 @@ class WidgetHelper
     public function addFileDataToTemplate(Template $template, string $filePath, array|null $imageAttributes = null): void
     {
         if (!$this->fs->fileExists($filePath)) {
-            throw new \InvalidArgumentException(sprintf('The file "%s" does not exist', $filePath));
+            throw new \InvalidArgumentException(\sprintf('The file "%s" does not exist', $filePath));
         }
 
         $file = new File($filePath);
@@ -92,7 +92,7 @@ class WidgetHelper
         // Add the image data
         if ($file->isImage) {
             $metaData = new Metadata([
-                'title' => sprintf('%s (%s, %sx%s px)', $file->path, $template->size, $file->width, $file->height),
+                'title' => \sprintf('%s (%s, %sx%s px)', $file->path, $template->size, $file->width, $file->height),
                 'alt' => $file->name,
             ]);
 
@@ -173,7 +173,7 @@ class WidgetHelper
     /**
      * Returns an array with all the information per file that Contao expects for the widget's value or the session value.
      */
-    public function getFilesArray(string $name, array $files, bool $storeFile = null): array
+    public function getFilesArray(string $name, array $files, bool|null $storeFile = null): array
     {
         $storeFile = $storeFile ?? true;
         $count = 0;
