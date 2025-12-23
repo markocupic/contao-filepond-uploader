@@ -1,6 +1,6 @@
 {
     "name": "markocupic/contao-filepond-uploader",
-    "description": "Frontend file uploader widget for Contao CMS",
+    "description": "Frontend file uploader widget for Contao CMS Browser-side image transformation",
     "keywords": [
         "filepond",
         "PQINA",
@@ -47,6 +47,5 @@
     "scripts": {
         "cs-fixer": "@php tools/ecs/vendor/bin/ecs check config/ contao/ src/ templates/ tests/ --config tools/ecs/config/default.php --fix --ansi",
         "unit-tests": "@php tools/phpunit/vendor/bin/phpunit -c tools/phpunit/phpunit.xml.dist"
-    },
-    "version": "1.0"
+    }
 }
