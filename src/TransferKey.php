@@ -16,50 +16,70 @@ namespace Markocupic\ContaoFilepondUploader;
 
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
-class TransferKey
+readonly class TransferKey
 {
     private const PREFIX = 'filepond';
 
+    private const TRANSFER_KEY_PARTS_COUNT = 3;
+
+    private const PART_INDEX_PREFIX = 0;
+
+    private const PART_INDEX_UNIQUE_ID = 1;
+
+    private const PART_INDEX_HASH = 2;
+
     public function __construct(
         #[Autowire('%kernel.secret')]
-        private readonly string $secret,
+        private string $secret,
     ) {
     }
 
     public function generate(): string
     {
         $uniqueId = uniqid();
-        $hash = $this->getHash($uniqueId);
+        $hash = $this->generateHash($uniqueId);
 
-        return \sprintf('%s_%s_%s', $this->getPrefix(), $uniqueId, $hash);
+        return \sprintf('%s_%s_%s', self::PREFIX, $uniqueId, $hash);
     }
 
     public function validate(string $transferKey): bool
     {
-        $parts = explode('_', $transferKey);
+        $parts = $this->parseTransferKey($transferKey);
 
-        if (3 !== \count($parts)) {
+        if (null === $parts) {
             return false;
         }
 
-        if ($parts[0] !== $this->getPrefix()) {
-            return false;
-        }
-
-        $uniqueId = $parts[1];
-        $hash = $parts[2];
-        $expected = $this->getHash($uniqueId);
+        $expected = $this->generateHash($parts['uniqueId']);
 
         // Use hash_equals to avoid timing attacks
-        return hash_equals($expected, $hash);
+        return hash_equals($expected, $parts['hash']);
     }
 
-    private function getPrefix(): string
+    /**
+     * Parse transfer key into its components.
+     *
+     * @return array{uniqueId: string, hash: string}|null
+     */
+    private function parseTransferKey(string $transferKey): array|null
     {
-        return self::PREFIX;
+        $parts = explode('_', $transferKey);
+
+        if (self::TRANSFER_KEY_PARTS_COUNT !== \count($parts)) {
+            return null;
+        }
+
+        if (self::PREFIX !== $parts[self::PART_INDEX_PREFIX]) {
+            return null;
+        }
+
+        return [
+            'uniqueId' => $parts[self::PART_INDEX_UNIQUE_ID],
+            'hash' => $parts[self::PART_INDEX_HASH],
+        ];
     }
 
-    private function getHash(string $value): string
+    private function generateHash(string $value): string
     {
         return hash('sha256', $this->secret.$value);
     }

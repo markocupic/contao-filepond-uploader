@@ -14,21 +14,21 @@ declare(strict_types=1);
 
 namespace Markocupic\ContaoFilepondUploader;
 
-use Markocupic\ContaoFilepondUploader\Widget\BaseWidget;
+use Markocupic\ContaoFilepondUploader\Widget\FilepondFrontendWidget;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
 #[Autoconfigure(public: true)]
-class Validator
+readonly class Validator
 {
     public function __construct(
-        private readonly Uploader $uploader,
+        private Uploader $uploader,
     ) {
     }
 
     /**
      * Validate the widget input.
      */
-    public function validateInput(BaseWidget $widget, array|string $input): array|string
+    public function validateInput(FilepondFrontendWidget $widget, array|string $input): array|string
     {
         // No input
         if (empty($input)) {
@@ -46,7 +46,7 @@ class Validator
     /**
      * Validate an empty value.
      */
-    private function validateEmptyValue(BaseWidget $widget): array|string
+    private function validateEmptyValue(FilepondFrontendWidget $widget): array|string
     {
         // Add an error if the field is mandatory
         if ($widget->mandatory) {
@@ -57,13 +57,16 @@ class Validator
             }
         }
 
-        return $widget->multiple ? [] : '';
+        $config = $widget->getUploaderConfig();
+
+
+        return  $config->isMultiple() ? [] : '';
     }
 
     /**
      * Validate the single file.
      */
-    private function validateSingleFile(BaseWidget $widget, string $input): string
+    private function validateSingleFile(FilepondFrontendWidget $widget, string $input): string
     {
         try {
             return $this->uploader->storeFile($widget->getUploaderConfig(), $input);
@@ -77,7 +80,7 @@ class Validator
     /**
      * Validate the multiple files.
      */
-    private function validateMultipleFiles(BaseWidget $widget, array $inputs): array
+    private function validateMultipleFiles(FilepondFrontendWidget $widget, array $inputs): array
     {
         $config = $widget->getUploaderConfig();
 

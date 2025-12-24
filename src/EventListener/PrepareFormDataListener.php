@@ -17,32 +17,47 @@ namespace Markocupic\ContaoFilepondUploader\EventListener;
 use Contao\CoreBundle\DependencyInjection\Attribute\AsHook;
 use Contao\Form;
 use Contao\FormFieldModel;
-use Markocupic\ContaoFilepondUploader\Widget\FrontendWidget;
+use Markocupic\ContaoFilepondUploader\Widget\FilepondFrontendWidget;
 
 #[AsHook('prepareFormData')]
-class PrepareFormDataListener
+readonly class PrepareFormDataListener
 {
     public function __invoke(array &$submittedData, array $labels, array $fields, Form $form, ?array &$files = null): void
     {
         /** @var FormFieldModel $model */
         foreach ($fields as $name => $model) {
-            if (FrontendWidget::TYPE !== $model->type) {
+            if (FilepondFrontendWidget::TYPE !== $model->type) {
                 continue;
             }
 
-            if (isset($submittedData[$name])) {
-                $submittedData[$name] = array_map(static fn (array $file): string => $file['tmp_name'], $submittedData[$name]);
-            }
-
-            $filesNew = [];
-
-            if (isset($files[$name])) {
-                foreach ($files[$name] as $file) {
-                    $filesNew[] = $file;
-                }
-
-                $files[$name] = $filesNew;
-            }
+            $this->transformFilepondSubmittedData($submittedData, $name);
+            $this->normalizeFilesArray($files, $name);
         }
+    }
+
+    /**
+     * Transforms the Filepond file structure by extracting only the tmp_name values.
+     */
+    private function transformFilepondSubmittedData(array &$submittedData, string $fieldName): void
+    {
+        if (!isset($submittedData[$fieldName])) {
+            return;
+        }
+        $submittedData[$fieldName] = array_map(
+            static fn (array $file): string => $file['tmp_name'],
+            $submittedData[$fieldName],
+        );
+    }
+
+    /**
+     * Normalizes the "files" array by re-indexing the entries.
+     */
+    private function normalizeFilesArray(?array &$files, string $fieldName): void
+    {
+        if (!isset($files[$fieldName])) {
+            return;
+        }
+
+        $files[$fieldName] = array_values($files[$fieldName]);
     }
 }

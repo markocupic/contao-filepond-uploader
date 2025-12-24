@@ -16,29 +16,29 @@ namespace Markocupic\ContaoFilepondUploader;
 
 use Contao\Config;
 use Contao\Dbafs;
-use Contao\StringUtil;
-use Contao\Validator;
-use Markocupic\ContaoFilepondUploader\Widget\BaseWidget;
+use Markocupic\ContaoFilepondUploader\Widget\FilepondFrontendWidget;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\HttpFoundation\Session\Flash\FlashBagInterface;
+use Symfony\Component\HttpFoundation\Session\Session;
 
-class Uploader
+readonly class Uploader
 {
     public function __construct(
-        private readonly ChunkUploader $chunkUploader,
-        private readonly Filesystem $fs,
-        private readonly RequestStack $requestStack,
+        private ChunkUploader $chunkUploader,
+        private Filesystem $fs,
+        private RequestStack $requestStack,
         #[Autowire('%kernel.project_dir%')]
-        private readonly string $projectDir,
+        private string $projectDir,
     ) {
     }
 
     /**
      * Upload the file.
      */
-    public function upload(Request $request, BaseWidget $widget): array|null
+    public function upload(Request $request, FilepondFrontendWidget $widget): array|null
     {
         $uploader = new FileUpload($widget->name);
         $config = $widget->getUploaderConfig();
@@ -80,9 +80,7 @@ class Uploader
     public function storeFile(UploaderConfig $config, string $file): string
     {
         // Convert uuid to binary format
-        if (Validator::isStringUuid($file)) {
-            $file = StringUtil::uuidToBin($file);
-        } elseif ($this->fs->fileExists($file)) {
+        if ($this->fs->fileExists($file)) {
             // Move the temporary file
             if ($config->isStoreFileEnabled() && $config->getUploadFolder()) {
                 $file = $this->fs->moveTmpFile($file, $config->getUploadFolder(), $config->isDoNotOverwriteEnabled());
@@ -103,7 +101,7 @@ class Uploader
     /**
      * Run the upload.
      */
-    private function runUpload(FileUpload $uploader, BaseWidget $widget, string $scope): array|null
+    private function runUpload(FileUpload $uploader, FilepondFrontendWidget $widget, string $scope): array|null
     {
         $result = null;
 
@@ -116,14 +114,19 @@ class Uploader
 
             // Collect the errors
             if ($uploader->hasError()) {
-                $errors = $this->requestStack->getSession()->getFlashBag()->peek(\sprintf('contao.%s.error', $scope));
+                /** @var Session $session */
+                $session = $this->requestStack->getSession();
+                $errors = $session->getFlashBag()->peek(\sprintf('contao.%s.error', $scope));
 
                 foreach ($errors as $error) {
                     $widget->addError($error);
                 }
             }
 
-            $this->requestStack->getSession()->getFlashBag()->clear();
+            /** @var Session $session */
+            $session = $this->requestStack->getSession();
+
+            $session->getFlashBag()->clear();
         } catch (\Exception $e) {
             $widget->addError($e->getMessage());
         }
@@ -178,7 +181,7 @@ class Uploader
     /**
      * Convert the global files array to Contao format.
      */
-    private function convertGlobalFilesArray(Request $request, BaseWidget $widget, bool $isChunk): void
+    private function convertGlobalFilesArray(Request $request, FilepondFrontendWidget $widget, bool $isChunk): void
     {
         $name = $widget->name;
 
@@ -202,6 +205,5 @@ class Uploader
         }
 
         $_FILES[$widget->name] = $file;
-        // unset($_FILES[$name]); // Unset the temporary file
     }
 }

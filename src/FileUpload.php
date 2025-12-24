@@ -18,6 +18,7 @@ use Contao\Config;
 use Contao\Message;
 use Contao\StringUtil;
 use Contao\System;
+use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\Finder\SplFileInfo;
 
@@ -177,9 +178,9 @@ class FileUpload extends \Contao\FileUpload
         return $this;
     }
 
-    public function uploadTo($target): array
+    public function uploadTo($strTarget): array
     {
-        $this->target = $target;
+        $this->target = $strTarget;
 
         // Preserve the configuration
         $uploadTypes = Config::get('uploadTypes');
@@ -187,11 +188,16 @@ class FileUpload extends \Contao\FileUpload
 
         $filesizeLabel = $GLOBALS['TL_LANG']['ERR']['filesize'];
 
-        // Perform upload
-        $result = parent::uploadTo($target);
+        try{
+            // Perform the file upload
+            $result = parent::uploadTo($strTarget);
+        }catch (\Exception $e) {
+            throw $e;
+        } finally {
+            // Restore the configuration
+            Config::set('uploadTypes', $uploadTypes);
+        }
 
-        // Restore the configuration
-        Config::set('uploadTypes', $uploadTypes);
         $GLOBALS['TL_LANG']['ERR']['filesize'] = $filesizeLabel;
 
         return $result;
@@ -212,7 +218,7 @@ class FileUpload extends \Contao\FileUpload
         $pathinfo = pathinfo($uploadedFile);
         $name = $pathinfo['filename'];
 
-        /** @var array<SplFileInfo> $files */
+        /** @var Finder<SplFileInfo> $files */
         $files = Finder::create()
             ->in($projectDir.'/'.$uploadFolder)
             ->files()
@@ -260,21 +266,5 @@ class FileUpload extends \Contao\FileUpload
         }
 
         return $files;
-    }
-
-    protected function resizeUploadedImage($strImage): bool
-    {
-        // $imageWidth = Config::get('imageWidth');
-        // $imageHeight = Config::get('imageHeight');
-        // $gdMaxImgWidth = Config::get('gdMaxImgWidth');
-        // $gdMaxImgHeight = Config::get('gdMaxImgHeight');
-
-        // Override temporarily the Contao local config image width configuration.
-        // Config::set('imageWidth', $this->imageWidth);
-        // Config::set('imageHeight', $this->imageHeight);
-        // Config::set('gdMaxImgWidth', $this->gdMaxImgWidth);
-        // Config::set('gdMaxImgHeight', $this->gdMaxImgHeight);
-
-        return parent::resizeUploadedImage($strImage);
     }
 }

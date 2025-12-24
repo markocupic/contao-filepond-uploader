@@ -12,6 +12,6 @@ declare(strict_types=1);
  * @link https://github.com/markocupic/contao-filepond-uploader
  */
 
-use Markocupic\ContaoFilepondUploader\Widget\FrontendWidget;
+use Markocupic\ContaoFilepondUploader\Widget\FilepondFrontendWidget;
 
-$GLOBALS['TL_FFL'][FrontendWidget::TYPE] = FrontendWidget::class;
+$GLOBALS['TL_FFL'][FilepondFrontendWidget::TYPE] = FilepondFrontendWidget::class;

@@ -16,41 +16,36 @@ namespace Markocupic\ContaoFilepondUploader\Widget;
 
 use Contao\CoreBundle\Exception\ResponseException;
 use Contao\FormFieldModel;
+use Contao\StringUtil;
 use Contao\System;
+use Contao\UploadableWidgetInterface;
+use Contao\Widget;
 use Markocupic\ContaoFilepondUploader\AssetsManager;
 use Markocupic\ContaoFilepondUploader\ConfigGenerator;
 use Markocupic\ContaoFilepondUploader\RequestHandler\FrontendHandler;
 use Markocupic\ContaoFilepondUploader\UploaderConfig;
+use Markocupic\ContaoFilepondUploader\Validator;
 use Markocupic\ContaoFilepondUploader\WidgetHelper;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\Request;
 
-class FrontendWidget extends BaseWidget
+class FilepondFrontendWidget extends Widget implements UploadableWidgetInterface
 {
     public const TYPE = 'filepondUploader';
 
-    /**
-     * Template.
-     *
-     * @var string
-     */
-    protected $strTemplate = 'filepond_uploader_frontend';
-
-    /**
-     * The CSS class prefix.
-     *
-     * @var string
-     */
-    protected $strPrefix = 'widget widget-filepond-uploader';
-
     protected ContainerInterface $container;
 
-    /**
-     * Initialize the object.
-     *
-     * @param array|null $attributes
-     */
-    public function __construct($attributes = null)
+    protected UploaderConfig|null $uploaderConfig = null;
+
+    protected int $uploaderLimit = 1;
+
+    protected array $jsConfig = [];
+
+    protected $strTemplate = 'filepond_uploader_frontend';
+
+    protected $strPrefix = 'widget widget-filepond-uploader';
+
+    public function __construct(array|null $attributes = null)
     {
         if (!empty($attributes['id']) && null !== ($formFieldModel = FormFieldModel::findById($attributes['id']))) {
             $this->arrConfiguration = array_merge($this->arrConfiguration, $formFieldModel->row());
@@ -66,9 +61,9 @@ class FrontendWidget extends BaseWidget
 
         // Set the default attributes
         $this->setDefaultAttributes();
-        $this->includeAssets('frontend' === $request->attributes->get('_scope'));
+        $this->includeAssets();
 
-        // Clean the chunks session when the widget is initialized in a non-ajax request
+        // Clean the chunk session when the widget is initialized in a non-ajax request
         if (!$request->isXmlHttpRequest()) {
             // $this->container->get('terminal42_fineuploader.chunk_uploader')->clearSession($this);
         }
@@ -177,9 +172,7 @@ class FrontendWidget extends BaseWidget
     /**
      * Parse the template file and return it as string.
      *
-     * @param array|null $arrAttributes An optional attributes array
-     *
-     * @return string The template markup
+     * @param array|null $arrAttributes
      */
     public function parse($arrAttributes = null): string
     {
@@ -227,24 +220,20 @@ class FrontendWidget extends BaseWidget
         throw new \BadMethodCallException('Use the parse() method instead');
     }
 
-    /**
-     * @param string|array|null $varInput
-     */
     protected function validator(mixed $varInput): array|string
     {
         $files = $this->getWidgetHelper()->getFilesFromFileInputField($varInput);
 
         $isMultiple = !empty($this->arrConfiguration['multiple']) && true === $this->arrConfiguration['multiple'];
 
-        // If "multiple" is set the input type "array", otherwise "string".
-        $files = parent::validator($isMultiple ? $files : (!empty($files[0]) ? $files[0] : ''));
+        // If "multiple" is set, the input type is "array", otherwise "string".
+        $varInput = $isMultiple ? $files : (!empty($files[0]) ? $files[0] : '');
+
+        $files = $this->container->get(Validator::class)->validateInput($this, $varInput);
 
         return $this->getWidgetHelper()->getFilesArray($this->strName, array_filter((array) $files), $this->storeFile);
     }
 
-    /**
-     * Set the default attributes.
-     */
     protected function setDefaultAttributes(): void
     {
         $this->decodeEntities = true;
@@ -255,45 +244,30 @@ class FrontendWidget extends BaseWidget
         }
     }
 
-    /**
-     * Include the assets.
-     */
-    protected function includeAssets(bool $frontendAssets = true): void
+    protected function includeAssets(): void
     {
         $manager = $this->getAssetsManager();
-        $assets = $manager->getBasicAssets();
 
-        if ($frontendAssets) {
-            $assets = array_merge($assets, $manager->getFrontendAssets($this->arrConfiguration['allowImageResize'] ?? false));
-        }
+        $assets = $manager->getFrontendAssets($this->arrConfiguration['allowImageResize'] ?? false);
 
         $manager->includeAssets($assets);
     }
 
-    /**
-     * Get the config generator.
-     */
+    /** @noinspection PhpIncompatibleReturnTypeInspection */
     protected function getConfigGenerator(): ConfigGenerator
     {
-        /** @var ConfigGenerator $configGenerator */
         return $this->container->get(ConfigGenerator::class);
     }
 
-    /**
-     * Get the widget helper.
-     */
-    protected function getWidgetHelper(): WidgetHelper
+    /** @noinspection PhpIncompatibleReturnTypeInspection */
+        protected function getWidgetHelper(): WidgetHelper
     {
-        /** @var WidgetHelper $widgetHelper */
         return $this->container->get(WidgetHelper::class);
     }
 
-    /**
-     * Get the assets manager.
-     */
+    /** @noinspection PhpIncompatibleReturnTypeInspection */
     protected function getAssetsManager(): AssetsManager
     {
-        /** @var AssetsManager $assetManager */
         return $this->container->get(AssetsManager::class);
     }
 }

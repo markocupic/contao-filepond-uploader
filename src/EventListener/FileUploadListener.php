@@ -20,7 +20,7 @@ use Contao\FilesModel;
 use Contao\Validator;
 use Markocupic\ContaoFilepondUploader\Event\FileUploadEvent;
 use Markocupic\ContaoFilepondUploader\Uploader;
-use Markocupic\ContaoFilepondUploader\Widget\FrontendWidget;
+use Markocupic\ContaoFilepondUploader\Widget\FilepondFrontendWidget;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
@@ -72,7 +72,7 @@ readonly class FileUploadListener
         }
 
         // Validate the image dimensions for the frontend widget
-        if ($widget instanceof FrontendWidget) {
+        if ($widget instanceof FilepondFrontendWidget) {
             $this->validateImageDimensions($widget, $filePath);
         }
 
@@ -99,7 +99,7 @@ readonly class FileUploadListener
     /**
      * Validate the image dimensions.
      */
-    private function validateImageDimensions(FrontendWidget $widget, string $filePath): void
+    private function validateImageDimensions(FilepondFrontendWidget $widget, string $filePath): void
     {
         $file = new File($filePath);
 

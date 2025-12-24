@@ -15,33 +15,34 @@ declare(strict_types=1);
 namespace Markocupic\ContaoFilepondUploader\RequestHandler;
 
 use Contao\CoreBundle\Routing\ScopeMatcher;
-use Markocupic\ContaoFilepondUploader\Widget\FrontendWidget;
+use Contao\Input;
+use Contao\StringUtil;
+use Contao\Validator;
+use Markocupic\ContaoFilepondUploader\Event\FileUploadEvent;
+use Markocupic\ContaoFilepondUploader\Widget\FilepondFrontendWidget;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\Filesystem\Path;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
 #[Autoconfigure(public: true)]
-class FrontendHandler
+readonly class FrontendHandler
 {
-    use HandlerTrait;
-
     public function __construct(
-        private readonly EventDispatcherInterface $eventDispatcher,
-        private readonly LoggerInterface $contaoErrorLogger,
-        private readonly ScopeMatcher $scopeMatcher,
-        #[Autowire('%kernel.project_dir%')]
-        private readonly string $projectDir,
+        private EventDispatcherInterface $eventDispatcher,
+        private LoggerInterface $contaoErrorLogger,
+        private ScopeMatcher $scopeMatcher,
     ) {
     }
 
     /**
      * Handle widget initialization request.
      */
-    public function handleWidgetInitRequest(Request $request, FrontendWidget $widget): Response|null
+    public function handleWidgetInitRequest(Request $request, FilepondFrontendWidget $widget): Response|null
     {
         if ($widget->name !== $request->headers->get('name')) {
             return null;
@@ -78,6 +79,17 @@ class FrontendHandler
         }
 
         return $response;
+    }
+
+    /**
+     * Get the file upload response.
+     */
+    protected function getUploadResponse(EventDispatcherInterface $eventDispatcher, Request $request, FilepondFrontendWidget $widget): JsonResponse
+    {
+        $event = new FileUploadEvent($request, new JsonResponse(), $widget);
+        $eventDispatcher->dispatch($event);
+
+        return $event->getResponse();
     }
 
     /**

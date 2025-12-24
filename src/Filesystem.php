@@ -22,13 +22,13 @@ use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\Finder\SplFileInfo;
 
-class Filesystem
+readonly class Filesystem
 {
     public function __construct(
         #[Autowire('%kernel.project_dir%')]
-        private readonly string $projectDir,
+        private string $projectDir,
         #[Autowire('%markocupic_contao_filepond_uploader.tmp_path%')]
-        private readonly string $tmpPath,
+        private string $tmpPath,
     ) {
     }
 
@@ -45,7 +45,9 @@ class Filesystem
      */
     public function fileExists(string $filePath): bool
     {
-        return is_file(Path::join($this->projectDir, $filePath));
+        $fs = new \Symfony\Component\Filesystem\Filesystem();
+
+        return $fs->exists(Path::join($this->projectDir, $filePath));
     }
 
     /**
@@ -53,7 +55,7 @@ class Filesystem
      */
     public function tmpFileExists(string $file): bool
     {
-        return $this->fileExists($this->tmpPath.'/'.$file);
+        return $this->fileExists(Path::join($this->tmpPath.'/'.$file));
     }
 
     /**
@@ -86,7 +88,39 @@ class Filesystem
      */
     public function standardizeFileName(string $filename): string
     {
-        return str_replace([',', '&'], '_', $filename);
+        // Trim whitespace
+        $filename = trim($filename);
+
+        // Windows-forbidden characters
+        $forbidden = [
+            ',',
+            '&',
+            '\\', // Backslash
+            '/', // Slash
+            ':', // Colon
+            '*', // Asterisk
+            '?', // Question mark
+            '"', // Double quote
+            '<', // Less-than
+            '>', // Greater-than
+            '|', // Pipe
+        ];
+
+        // Replace forbidden characters with underscore
+        $filename = str_replace($forbidden, '_', $filename);
+
+        // Remove ASCII control characters (0–31)
+        $filename = preg_replace('/[\x00-\x1F]/', '', $filename);
+
+        // Normalize whitespace
+        $filename = preg_replace('/\s+/', ' ', $filename);
+
+        // Prevent empty filenames
+        if ('' === $filename) {
+            $filename = uniqid('file_');
+        }
+
+        return $filename;
     }
 
     /**
@@ -155,8 +189,8 @@ class Filesystem
         }
 
         $offset = 1;
-        $pathinfo = pathinfo($filePath);
-        $name = $pathinfo['filename'];
+        $pathInfo = pathinfo($filePath);
+        $name = $pathInfo['filename'];
 
         // Uses the Symfony Finder to find all files in the target folder and convert their relative path names into an array.
         $allFiles = iterator_to_array(Finder::create()->files()->in(Path::join($this->projectDir, $folder))->getIterator());
@@ -169,7 +203,7 @@ class Filesystem
         // Example: For photo.jpg, the following files are found:
         // photo.jpg, photo__1.jpg, photo__2.jpg, photo_backup.jpg, etc.
         $files = preg_grep(
-            '/^'.preg_quote($name, '/').'.*\.'.preg_quote($pathinfo['extension'], '/').'/',
+            '/^'.preg_quote($name, '/').'.*\.'.preg_quote($pathInfo['extension'], '/').'/',
             $allFiles,
         );
 
@@ -178,8 +212,8 @@ class Filesystem
         // - Saves the highest number found in $offset
         // Example: If photo__1.jpg, photo__3.jpg, photo__7.jpg exist, $offset becomes 7.
         foreach ($files as $file) {
-            if (preg_match('/__[0-9]+\.'.preg_quote($pathinfo['extension'], '/').'$/', $file)) {
-                $file = str_replace('.'.$pathinfo['extension'], '', $file);
+            if (preg_match('/__[0-9]+\.'.preg_quote($pathInfo['extension'], '/').'$/', $file)) {
+                $file = str_replace('.'.$pathInfo['extension'], '', $file);
                 $value = (int) substr($file, strrpos($file, '_') + 1);
                 $offset = max($offset, $value);
             }

@@ -19,7 +19,7 @@ use Contao\CoreBundle\Controller\FrontendModule\AbstractFrontendModuleController
 use Contao\CoreBundle\DependencyInjection\Attribute\AsFrontendModule;
 use Contao\CoreBundle\Twig\FragmentTemplate;
 use Contao\ModuleModel;
-use Markocupic\ContaoFilepondUploader\Widget\FrontendWidget;
+use Markocupic\ContaoFilepondUploader\Widget\FilepondFrontendWidget;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -52,7 +52,7 @@ class FilepondController extends AbstractFrontendModuleController
 
         // Add a sample text form field:
         $form->addFormField('filepond', [
-            'inputType' => FrontendWidget::TYPE,
+            'inputType' => FilepondFrontendWidget::TYPE,
             'eval' => [
                 'mandatory' => true,
                 'uploadFolder' => 'files/_filepond_test_2',

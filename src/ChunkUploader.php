@@ -16,7 +16,7 @@ namespace Markocupic\ContaoFilepondUploader;
 
 use Contao\File;
 use Contao\System;
-use Markocupic\ContaoFilepondUploader\Widget\BaseWidget;
+use Markocupic\ContaoFilepondUploader\Widget\FilepondFrontendWidget;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 
@@ -34,7 +34,7 @@ class ChunkUploader
     /**
      * Handle the chunk by storing it in the session for further merge.
      */
-    public function handleChunk(Request $request, BaseWidget $widget, string $filePath): string
+    public function handleChunk(Request $request, FilepondFrontendWidget $widget, string $filePath): string
     {
         $fileName = $request->request->get('qqfilename');
         $sessionKey = $this->getSessionKey($widget);
@@ -66,7 +66,7 @@ class ChunkUploader
     /**
      * Clear the session from chunks.
      */
-    public function clearSession(BaseWidget $widget): void
+    public function clearSession(FilepondFrontendWidget $widget): void
     {
         $this->requestStack->getSession()->remove($this->getSessionKey($widget));
     }
@@ -74,7 +74,7 @@ class ChunkUploader
     /**
      * Initialize the session parameter (#86).
      */
-    public function initSession(BaseWidget $widget): void
+    public function initSession(FilepondFrontendWidget $widget): void
     {
         $this->requestStack->getSession()->set($this->getSessionKey($widget), []);
     }
@@ -84,7 +84,7 @@ class ChunkUploader
      *
      * @param string $fileName
      */
-    private function mergeChunks(BaseWidget $widget, array $chunks, $fileName): string
+    private function mergeChunks(FilepondFrontendWidget $widget, array $chunks, $fileName): string
     {
         // Replace the special characters (#22)
         $fileName = $this->fs->standardizeFileName($fileName);
@@ -105,7 +105,7 @@ class ChunkUploader
     /**
      * Validate the file.
      */
-    private function validateFile(File $file, BaseWidget $widget): void
+    private function validateFile(File $file, FilepondFrontendWidget $widget): void
     {
         $config = $widget->getUploaderConfig();
         $minSizeLimit = $config->getMinSizeLimit();
@@ -126,7 +126,7 @@ class ChunkUploader
     /**
      * Get the session key.
      */
-    private function getSessionKey(BaseWidget $widget): string
+    private function getSessionKey(FilepondFrontendWidget $widget): string
     {
         return $widget->name.'_FINEUPLOADER_CHUNKS';
     }

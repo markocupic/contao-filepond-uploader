@@ -24,10 +24,10 @@ use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
 #[Autoconfigure(public: true)]
-class ConfigGenerator
+readonly class ConfigGenerator
 {
     public function __construct(
-        private readonly ContaoCsrfTokenManager $csrfTokenManager,
+        private ContaoCsrfTokenManager $csrfTokenManager,
         #[Autowire('%kernel.debug')]
         private bool $debug,
     ) {
@@ -303,7 +303,7 @@ class ConfigGenerator
         $labels = [];
 
         foreach ($labelKeys as $key) {
-            // Use label only if available, otherwise fall back to default message
+            // Use label only if available, otherwise fall back to the default message
             // defined in Filepond JS script (EN)
             if (!empty($GLOBALS['TL_LANG']['MSC']['filepond.trans.'.$key])) {
                 $labels['filepond'][$key] = $GLOBALS['TL_LANG']['MSC']['filepond.trans.'.$key];
