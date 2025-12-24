@@ -106,7 +106,7 @@ class ContaoFilepondPlugin {
     }
 
     /**
-     * Set the accept attribute on the filepond input field.
+     * Set the "accept" attribute on the filepond input field.
      * @param extensions
      * @returns {ContaoFilepondPlugin}
      */
@@ -185,7 +185,7 @@ class ContaoFilepondPlugin {
                     // Get the item id from metadata (added in onaddfile())
                     const itemId = metadata.itemId;
 
-                    // Remove the injected custom error box, if there is one...
+                    // Remove the injected custom error box if there is one...
                     const errBoxes = document.querySelectorAll('#filepond--item-' + itemId + ' .filepond--contao-error');
                     for (const errBox of errBoxes) {
                         errBox.remove();

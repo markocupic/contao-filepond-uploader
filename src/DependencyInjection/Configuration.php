@@ -27,10 +27,10 @@ class Configuration implements ConfigurationInterface
 
         $treeBuilder->getRootNode()
             ->children()
-            ->scalarNode('tmp_path')
-            ->cannotBeEmpty()
-            ->defaultValue('system/tmp')
-            ->end()
+                ->scalarNode('tmp_path')
+                    ->cannotBeEmpty()
+                    ->defaultValue('system/tmp')
+                ->end()
             ->end()
         ;
 

@@ -5,7 +5,7 @@ declare(strict_types=1);
 /*
  * This file is part of Contao Filepond Uploader.
  *
- * (c) Marko Cupic 2024 <m.cupic@gmx.ch>
+ * (c) Marko Cupic <m.cupic@gmx.ch>
  * @license GPL-3.0-or-later
  * For the full copyright and license information,
  * please view the LICENSE file that was distributed with this source code.
@@ -14,32 +14,26 @@ declare(strict_types=1);
 
 namespace Markocupic\ContaoFilepondUploader;
 
-use Contao\CoreBundle\File\Metadata;
-use Contao\CoreBundle\Image\Studio\Studio;
 use Contao\File;
 use Contao\FilesModel;
-use Contao\Image;
 use Contao\Model\Collection;
 use Contao\StringUtil;
-use Contao\System;
-use Contao\Template;
 use Contao\Validator;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
-use Terminal42\FineUploaderBundle\Widget\BaseWidget;
 
 #[Autoconfigure(public: true)]
-class WidgetHelper
+readonly class WidgetHelper
 {
     public function __construct(
-        private readonly Filesystem $fs,
-        private readonly Studio $studio,
+        private Filesystem $fs,
+        private TransferKey $transferKey,
         #[Autowire('%kernel.project_dir%')]
-        private readonly string $projectDir,
+        private string $projectDir,
         #[Autowire('%markocupic_contao_filepond_uploader.tmp_path%')]
-        private readonly string $tmpPath,
+        private string $tmpPath,
     ) {
     }
 
@@ -72,48 +66,9 @@ class WidgetHelper
     }
 
     /**
-     * @nousage
-     * Add the file data to template.
-     *
-     * @throws \InvalidArgumentException
-     */
-    public function addFileDataToTemplate(Template $template, string $filePath, array|null $imageAttributes = null): void
-    {
-        if (!$this->fs->fileExists($filePath)) {
-            throw new \InvalidArgumentException(\sprintf('The file "%s" does not exist', $filePath));
-        }
-
-        $file = new File($filePath);
-        $template->file = $file;
-        $template->icon = Image::getHtml(Image::getPath($file->icon), $file->extension);
-        $template->size = System::getReadableSize($file->size);
-        $template->addImage = false;
-
-        // Add the image data
-        if ($file->isImage) {
-            $metaData = new Metadata([
-                'title' => \sprintf('%s (%s, %sx%s px)', $file->path, $template->size, $file->width, $file->height),
-                'alt' => $file->name,
-            ]);
-
-            $figure = $this->studio
-                ->createFigureBuilder()
-                ->from($file->path)
-                ->setMetadata($metaData)
-                ->setSize($imageAttributes['size'] ?? null)
-                ->buildIfResourceExists()
-            ;
-
-            if (null !== $figure) {
-                $figure->applyLegacyTemplateData($template);
-            }
-        }
-    }
-
-    /**
      * Converts transferKeys from the file input field
      * to relative file paths
-     * and returns them as array.
+     * and returns them as an array.
      */
     public function getFilesFromFileInputField(array|string|null $files): array
     {
@@ -124,8 +79,12 @@ class WidgetHelper
         foreach ($files as $transferKey) {
             $model = null;
 
-            if ('undefined' === $transferKey) {
+            if ('' === $transferKey || 'undefined' === $transferKey) {
                 continue;
+            }
+
+            if (!$this->transferKey->validate($transferKey)) {
+                throw new \Exception('Invalid transferKey: '.$transferKey);
             }
 
             // Get the file model
@@ -157,6 +116,10 @@ class WidgetHelper
 
     public function getFileFromTransferKey(string $transferKey): \SplFileInfo|null
     {
+        if ('' === $transferKey) {
+            return null;
+        }
+
         $finder = new Finder();
         $finder->files()->in(Path::join($this->projectDir, $this->tmpPath, $transferKey));
 
@@ -233,47 +196,6 @@ class WidgetHelper
     }
 
     /**
-     * Generate the item template.
-     *
-     * @return Template
-     */
-    public function generateItemTemplate(BaseWidget $widget, string $id, string $path)
-    {
-        $template = $widget->getItemTemplate();
-        $template->id = $id;
-        $template->isDownloads = $widget->isDownloads;
-        $template->isGallery = $widget->isGallery;
-
-        $this->addFileDataToTemplate($template, $path, ['size' => $widget->imageSize]);
-
-        return $template;
-    }
-
-    /**
-     * Generate the values template.
-     */
-    public function generateValuesTemplate(BaseWidget $widget): Template
-    {
-        $template = $widget->getValuesTemplate();
-        $template->setData($widget->getConfiguration());
-
-        $values = [];
-
-        // Generate the values
-        foreach ($this->generateValue(array_filter((array) $widget->value)) as $id => $path) {
-            $values[$id] = $this->generateItemTemplate($widget, $id, $path);
-        }
-
-        $template->id = $widget->id;
-        $template->name = $widget->name;
-        $template->order = array_keys($values);
-        $template->sortable = $widget->sortable && $widget->multiple && \count($values) > 1;
-        $template->values = $values;
-
-        return $template;
-    }
-
-    /**
      * Generate the database files.
      */
     private function generateDatabaseFiles(array $uuids): array
@@ -289,7 +211,7 @@ class WidgetHelper
          * @var FilesModel $fileModel
          */
         foreach ($fileModels as $fileModel) {
-            // Skip non existing files
+            // Skip not-existing files
             if (!$this->fs->fileExists($fileModel->path)) {
                 continue;
             }
@@ -312,7 +234,7 @@ class WidgetHelper
                 $file = $file['tmp_name'] ?? null;
             }
 
-            // Skip non existing files
+            // Skip not-existing files
             if (!$file || !$this->fs->fileExists($file)) {
                 continue;
             }

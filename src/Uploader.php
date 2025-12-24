@@ -5,7 +5,7 @@ declare(strict_types=1);
 /*
  * This file is part of Contao Filepond Uploader.
  *
- * (c) Marko Cupic 2024 <m.cupic@gmx.ch>
+ * (c) Marko Cupic <m.cupic@gmx.ch>
  * @license GPL-3.0-or-later
  * For the full copyright and license information,
  * please view the LICENSE file that was distributed with this source code.
@@ -87,7 +87,7 @@ class Uploader
             if ($config->isStoreFileEnabled() && $config->getUploadFolder()) {
                 $file = $this->fs->moveTmpFile($file, $config->getUploadFolder(), $config->isDoNotOverwriteEnabled());
 
-                // Add the file to database file system
+                // Add the file to the database-assisted file system
                 if ($config->isAddToDbafsEnabled() && null !== ($model = Dbafs::addResource($file))) {
                     $file = $model->uuid;
                 }

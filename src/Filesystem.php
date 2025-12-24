@@ -61,10 +61,10 @@ class Filesystem
      */
     public function mergeTmpFiles(array $files, string $fileName): File
     {
-        $file = new File($this->getTmpPath().'/'.$fileName);
+        $file = new File(Path::join($this->getTmpPath(), $fileName));
 
         foreach ($files as $filePath) {
-            $file->append(file_get_contents($this->projectDir.'/'.$filePath), '');
+            $file->append(file_get_contents(Path::join($this->projectDir, $filePath)), '');
             Files::getInstance()->delete($filePath);
         }
 
@@ -94,7 +94,7 @@ class Filesystem
      *
      * @throws \Exception
      */
-    public function moveTmpFile(string $file, string $destination, bool $doNotOverwrite = false): string
+    public function moveTmpFile(string $file, string $destination, bool $doNotOverride = false): string
     {
         if (!$this->fileExists($file)) {
             return '';
@@ -105,11 +105,11 @@ class Filesystem
             return $file;
         }
 
-        $new = $destination.'/'.basename($file);
+        $new = Path::join($destination, basename($file));
 
         // Do not overwrite existing files
-        if ($doNotOverwrite) {
-            $new = $destination.'/'.$this->getFileName(basename($file), $destination);
+        if ($doNotOverride) {
+            $new = Path::join($destination, $this->getFileName(basename($file), $destination));
         }
 
         $files = Files::getInstance();
@@ -143,11 +143,14 @@ class Filesystem
     }
 
     /**
-     * Get the new file name if it already exists in the folder.
+     * This method generates a unique file name for a file to be uploaded.
+     * If a file with the same name already exists,
+     * it adds a numerical suffix (e.g. file__1.jpg, file__2.jpg)
+     * to avoid naming conflicts.
      */
     private function getFileName(string $filePath, string $folder): string
     {
-        if (!$this->fileExists($folder.'/'.$filePath)) {
+        if (!$this->fileExists(Path::join($folder, $filePath))) {
             return $filePath;
         }
 
@@ -155,15 +158,25 @@ class Filesystem
         $pathinfo = pathinfo($filePath);
         $name = $pathinfo['filename'];
 
+        // Uses the Symfony Finder to find all files in the target folder and convert their relative path names into an array.
         $allFiles = iterator_to_array(Finder::create()->files()->in(Path::join($this->projectDir, $folder))->getIterator());
         $allFiles = array_map(static fn (SplFileInfo $fileInfo) => $fileInfo->getRelativePathname(), $allFiles);
 
-        // Find the files with the same extension
+        // Find the files with the same extension:
+        // Searches for all files that:
+        // - start with the same base name ($name)
+        // - have the same file extension
+        // Example: For photo.jpg, the following files are found:
+        // photo.jpg, photo__1.jpg, photo__2.jpg, photo_backup.jpg, etc.
         $files = preg_grep(
             '/^'.preg_quote($name, '/').'.*\.'.preg_quote($pathinfo['extension'], '/').'/',
             $allFiles,
         );
 
+        // - Checks each file for the pattern __[number].[extension] (e.g. __5.jpg)
+        // - Extracts the number after the last underscore
+        // - Saves the highest number found in $offset
+        // Example: If photo__1.jpg, photo__3.jpg, photo__7.jpg exist, $offset becomes 7.
         foreach ($files as $file) {
             if (preg_match('/__[0-9]+\.'.preg_quote($pathinfo['extension'], '/').'$/', $file)) {
                 $file = str_replace('.'.$pathinfo['extension'], '', $file);
@@ -172,6 +185,9 @@ class Filesystem
             }
         }
 
+        // Increments $offset (e.g. from 7 to 8)
+        // Replaces filename with filename__8.
+        // Returns the new unique file name
         return str_replace($name.'.', $name.'__'.++$offset.'.', $filePath);
     }
 }

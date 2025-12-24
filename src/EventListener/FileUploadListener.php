@@ -24,16 +24,13 @@ use Markocupic\ContaoFilepondUploader\Widget\FrontendWidget;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
-class FileUploadListener
+readonly class FileUploadListener
 {
     public function __construct(
-        private readonly Uploader $uploader,
+        private Uploader $uploader,
     ) {
     }
 
-    /**
-     * On file upload.
-     */
     #[AsEventListener]
     public function onFileUpload(FileUploadEvent $event): void
     {
@@ -56,9 +53,9 @@ class FileUploadListener
         $filePath = $arrUploadResult['filePath'];
 
         if (Validator::isUuid($filePath)) {
-            $fileModel = FilesModel::findByUuid($filePath);
+            $filesModel = FilesModel::findByUuid($filePath);
 
-            if (null === $fileModel) {
+            if (null === $filesModel) {
                 $event->setResponse(
                     new JsonResponse([
                         'success' => false,
@@ -71,7 +68,7 @@ class FileUploadListener
                 return;
             }
 
-            $filePath = $fileModel->path;
+            $filePath = $filesModel->path;
         }
 
         // Validate the image dimensions for the frontend widget
