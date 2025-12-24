@@ -43,7 +43,7 @@
             "contao/manager-plugin": false,
             "contao-community-alliance/composer-plugin": true,
             "dealerdirect/phpcodesniffer-composer-installer": true,
-            "allow-plugins.php-http/discovery": true
+            "php-http/discovery": true
         }
     },
     "extra": {
