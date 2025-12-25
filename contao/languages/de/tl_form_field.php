@@ -18,6 +18,11 @@ $GLOBALS['TL_LANG']['FFL']['filepondUploader'] = [
 ];
 
 /*
+ * Palettes
+ */
+$GLOBALS['TL_LANG']['tl_form_field']['image_config_legend'] = 'Einstellungen für Bilduploads';
+
+/*
  * Fields
  */
 $GLOBALS['TL_LANG']['tl_form_field']['maxConnections'] = [

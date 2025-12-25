@@ -14,6 +14,7 @@ declare(strict_types=1);
 
 $GLOBALS['TL_LANG']['ERR']['fileminwidth'] = 'Datei %s benötigt eine Mindestbreite von %d Pixel!';
 $GLOBALS['TL_LANG']['ERR']['fileminheight'] = 'Datei %s benötigt eine Mindesthöhe von %d Pixel!';
+$GLOBALS['TL_LANG']['ERR']['filepond.error'] = 'Beim Versuch die Datei hochzuladen ist es zu einem unbekannten Fehler gekommen.';
 
 // Filepond
 $GLOBALS['TL_LANG']['MSC']['filepond.trans.labelIdle'] = '<span class=\"filepond--label-action\">Hier klicken</span> oder Dateien ablegen';

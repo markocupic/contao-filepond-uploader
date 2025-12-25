@@ -45,18 +45,16 @@ class FileUpload extends \Contao\FileUpload
     /**
      * Temporary store target from uploadTo() to make it available to getFilesFromGlobal().
      */
-    private string $target;
+    private string $target = '';
 
-    public function __construct(string $name)
+    public function __construct(string $name, array $arrConfiguration)
     {
         parent::__construct();
 
         $this->setName($name);
 
-        $this->extensions = StringUtil::trimsplit(',', strtolower(Config::get('uploadTypes')));
-        $this->maxFileSize = (int) Config::get('maxFileSize') ?? 0;
-        $this->imageWidth = (int) Config::get('imageWidth') ?? 0;
-        $this->imageHeight = (int) Config::get('imageHeight') ?? 0;
+        $this->extensions = StringUtil::trimsplit(',', strtolower($arrConfiguration['extensions'] ?? Config::get('uploadTypes')));
+        $this->maxFileSize = (int) $arrConfiguration['maxlength'] ?? 0;
         $this->gdMaxImgWidth = (int) Config::get('gdMaxImgWidth') ?? 0;
         $this->gdMaxImgHeight = (int) Config::get('gdMaxImgHeight') ?? 0;
     }
@@ -180,25 +178,26 @@ class FileUpload extends \Contao\FileUpload
 
     public function uploadTo($strTarget): array
     {
+        // Set the temp target folder (system/tmp/...)
         $this->target = $strTarget;
 
-        // Preserve the configuration
+        // Temporary override the configuration
         $uploadTypes = Config::get('uploadTypes');
         Config::set('uploadTypes', implode(',', $this->extensions));
 
-        $filesizeLabel = $GLOBALS['TL_LANG']['ERR']['filesize'];
+        $maxFileSize = Config::get('maxFileSize');
+        Config::set('maxFileSize', $this->maxFileSize);
 
-        try{
+        try {
             // Perform the file upload
             $result = parent::uploadTo($strTarget);
-        }catch (\Exception $e) {
+        } catch (\Exception $e) {
             throw $e;
         } finally {
             // Restore the configuration
             Config::set('uploadTypes', $uploadTypes);
+            Config::set('maxFileSize', $maxFileSize);
         }
-
-        $GLOBALS['TL_LANG']['ERR']['filesize'] = $filesizeLabel;
 
         return $result;
     }
@@ -252,7 +251,7 @@ class FileUpload extends \Contao\FileUpload
             }
         }
 
-        // Validate minimum file size and skip from parent call
+        // Validate the minimum file size and skip from the parent call
         if ($this->minFileSize > 0) {
             $minlength_kb_readable = static::getReadableSize($this->minFileSize);
 

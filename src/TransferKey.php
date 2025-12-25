@@ -18,7 +18,7 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
 readonly class TransferKey
 {
-    private const PREFIX = 'filepond';
+    public const PREFIX = 'filepond';
 
     private const TRANSFER_KEY_PARTS_COUNT = 3;
 

@@ -35,7 +35,8 @@ readonly class Validator
             return $this->validateEmptyValue($widget);
         }
 
-        // If "multiple" is set the input type "array", otherwise "string".
+        // If the "multiple" attribute is set,
+        // FilePond submits the input as "array", otherwise as "string".
         if (\is_array($input)) {
             return $this->validateMultipleFiles($widget, array_filter($input));
         }
@@ -59,8 +60,7 @@ readonly class Validator
 
         $config = $widget->getUploaderConfig();
 
-
-        return  $config->isMultiple() ? [] : '';
+        return $config->isMultiple() ? [] : '';
     }
 
     /**

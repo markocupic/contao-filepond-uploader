@@ -14,9 +14,8 @@ declare(strict_types=1);
 
 namespace Markocupic\ContaoFilepondUploader\Widget;
 
+use Contao\Config;
 use Contao\CoreBundle\Exception\ResponseException;
-use Contao\FormFieldModel;
-use Contao\StringUtil;
 use Contao\System;
 use Contao\UploadableWidgetInterface;
 use Contao\Widget;
@@ -47,21 +46,35 @@ class FilepondFrontendWidget extends Widget implements UploadableWidgetInterface
 
     public function __construct(array|null $attributes = null)
     {
-        if (!empty($attributes['id']) && null !== ($formFieldModel = FormFieldModel::findById($attributes['id']))) {
-            $this->arrConfiguration = array_merge($this->arrConfiguration, $formFieldModel->row());
+        // First run the parent constructor, then add our custom attributes
+        parent::__construct($attributes);
+
+        // Set defaults
+        $this->arrConfiguration['maxlength'] = Config::get('maxFileSize') ?? 0; // max file size in bytes
+        $this->arrConfiguration['minlength'] = 0; // min file size in bytes
+        $this->arrConfiguration['maxImageWidth'] = Config::get('imageWidth') ?? 0; // max image width in pixels
+        $this->arrConfiguration['maxImageHeight'] = Config::get('imageHeight') ?? 0; // max image height in pixels
+
+        if (!empty($attributes) && \is_array($attributes)) {
+            // Override defaults with values form field config.
+            $attr = $attributes;
+            $row = [];
+            $row['maxlength'] = !empty($attr['maxlength']) ? $attr['maxlength'] : $this->arrConfiguration['maxlength']; // max file size in bytes
+            $row['minlength'] = !empty($attr['minlength']) ? $attr['minlength'] : $this->arrConfiguration['minlength']; // min file size in bytes
+            $row['maxImageWidth'] = !empty($attr['maxImageWidth']) ? $attr['maxImageWidth'] : $this->arrConfiguration['maxImageWidth']; // max image width in pixels
+            $row['maxImageHeight'] = !empty($attr['maxImageHeight']) ? $attr['maxImageHeight'] : $this->arrConfiguration['maxImageHeight']; // max image height in pixels
+
+            $this->arrConfiguration = array_merge($this->arrConfiguration, $row);
         }
 
         $this->blnSubmitInput = true;
-
         $this->container = System::getContainer();
-
-        parent::__construct($attributes);
-
-        $request = $this->getRequest();
 
         // Set the default attributes
         $this->setDefaultAttributes();
         $this->includeAssets();
+
+        $request = $this->getRequest();
 
         // Clean the chunk session when the widget is initialized in a non-ajax request
         if (!$request->isXmlHttpRequest()) {
@@ -184,6 +197,7 @@ class FilepondFrontendWidget extends Widget implements UploadableWidgetInterface
         // }
 
         if (!$this->jsConfig) {
+            /** @var ConfigGenerator $configGenerator */
             $this->jsConfig = $this->getConfigGenerator()->generateJavaScriptConfig($this->getUploaderConfig());
         }
 
@@ -253,19 +267,25 @@ class FilepondFrontendWidget extends Widget implements UploadableWidgetInterface
         $manager->includeAssets($assets);
     }
 
-    /** @noinspection PhpIncompatibleReturnTypeInspection */
+    /**
+     * @noinspection PhpIncompatibleReturnTypeInspection
+     */
     protected function getConfigGenerator(): ConfigGenerator
     {
         return $this->container->get(ConfigGenerator::class);
     }
 
-    /** @noinspection PhpIncompatibleReturnTypeInspection */
-        protected function getWidgetHelper(): WidgetHelper
+    /**
+     * @noinspection PhpIncompatibleReturnTypeInspection
+     */
+    protected function getWidgetHelper(): WidgetHelper
     {
         return $this->container->get(WidgetHelper::class);
     }
 
-    /** @noinspection PhpIncompatibleReturnTypeInspection */
+    /**
+     * @noinspection PhpIncompatibleReturnTypeInspection
+     */
     protected function getAssetsManager(): AssetsManager
     {
         return $this->container->get(AssetsManager::class);

@@ -78,7 +78,7 @@ readonly class Filesystem
     /**
      * Get the temporary file name.
      */
-    public function getTmpFileName(string $file): string
+    public function getUniqueTmpFileName(string $file): string
     {
         return $this->getFileName($file, $this->getTmpPath());
     }

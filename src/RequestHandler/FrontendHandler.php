@@ -15,15 +15,11 @@ declare(strict_types=1);
 namespace Markocupic\ContaoFilepondUploader\RequestHandler;
 
 use Contao\CoreBundle\Routing\ScopeMatcher;
-use Contao\Input;
-use Contao\StringUtil;
-use Contao\Validator;
 use Markocupic\ContaoFilepondUploader\Event\FileUploadEvent;
 use Markocupic\ContaoFilepondUploader\Widget\FilepondFrontendWidget;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
-use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -34,7 +30,7 @@ readonly class FrontendHandler
 {
     public function __construct(
         private EventDispatcherInterface $eventDispatcher,
-        private LoggerInterface $contaoErrorLogger,
+        private LoggerInterface|null $contaoErrorLogger,
         private ScopeMatcher $scopeMatcher,
     ) {
     }
@@ -59,26 +55,15 @@ readonly class FrontendHandler
         try {
             $this->validateRequest($request);
         } catch (\Exception $e) {
-            $this->contaoErrorLogger->error($e->getMessage());
+            $this->contaoErrorLogger?->error($e->getMessage());
 
             return new Response('Bad Request', 400);
         }
 
-        // Add the item id to the request attributes
-        $request->attributes->set('filePondItemId', $request->headers->get('Fileponditemid'));
-
         // Avoid circular reference
         $request->attributes->set('filepond_ajax', true);
 
-        try {
-            $response = $this->getUploadResponse($this->eventDispatcher, $request, $widget);
-        } catch (\Exception $e) {
-            $this->contaoErrorLogger->error($e->getMessage());
-
-            $response = new Response('Bad Request', 400);
-        }
-
-        return $response;
+        return $this->getUploadResponse($this->eventDispatcher, $request, $widget);
     }
 
     /**
@@ -101,8 +86,8 @@ readonly class FrontendHandler
             throw new \RuntimeException('This method can be executed only in the frontend scope');
         }
 
-        if (!$request->headers->has('Fileponditemid')) {
-            throw new BadRequestHttpException('Required header "Fileponditemid" is missing.');
+        if (!$request->headers->has('filePondItemId')) {
+            throw new BadRequestHttpException('Required header "filePondItemId" is missing.');
         }
 
         if (!$request->isMethod(Request::METHOD_POST)) {

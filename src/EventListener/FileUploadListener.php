@@ -42,7 +42,7 @@ readonly class FileUploadListener
                 new JsonResponse([
                     'success' => false,
                     'filePondItemId' => $event->getRequest()->attributes->get('filePondItemId'),
-                    'error' => $GLOBALS['TL_LANG']['ERR']['general'],
+                    'error' => \strlen($widget->getErrorAsString()) ? $widget->getErrorAsString() : $GLOBALS['TL_LANG']['ERR']['general'],
                     'preventRetry' => true,
                 ]),
             );

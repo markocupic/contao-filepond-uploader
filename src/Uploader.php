@@ -21,7 +21,6 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
-use Symfony\Component\HttpFoundation\Session\Flash\FlashBagInterface;
 use Symfony\Component\HttpFoundation\Session\Session;
 
 readonly class Uploader
@@ -40,12 +39,12 @@ readonly class Uploader
      */
     public function upload(Request $request, FilepondFrontendWidget $widget): array|null
     {
-        $uploader = new FileUpload($widget->name);
+        $uploader = new FileUpload($widget->name, $widget->getConfiguration());
         $config = $widget->getUploaderConfig();
         $isChunk = $config->isChunkingEnabled() && $request->request->has('qqpartindex');
 
         // Convert the $_FILES array to Contao format
-        $this->convertGlobalFilesArray($request, $widget, $isChunk);
+        $this->prepareGlobalFilesArray($request, $widget, $isChunk);
 
         // Configure the uploader
         $this->configureUploader($uploader, $config, $isChunk);
@@ -132,8 +131,8 @@ readonly class Uploader
         }
 
         // Add an error if the result is incorrect
-        if (!\is_array($result) || \count($result) < 1) {
-            $widget->addError($GLOBALS['TL_LANG']['MSC']['fineuploader.error']);
+        if (!\is_array($result) || empty($result)) {
+            $widget->addError($GLOBALS['TL_LANG']['ERR']['filepond.error']);
             $result = null;
         }
 
@@ -179,9 +178,13 @@ readonly class Uploader
     }
 
     /**
-     * Convert the global files array to Contao format.
+     * Prepares the global $_FILES array for the given widget.
+     *
+     * This method modifies the global $_FILES array to standardize and set unique temporary file names
+     * for file uploads based on the widget and request data. Handles both standard uploads
+     * and chunked uploads.
      */
-    private function convertGlobalFilesArray(Request $request, FilepondFrontendWidget $widget, bool $isChunk): void
+    private function prepareGlobalFilesArray(Request $request, FilepondFrontendWidget $widget, bool $isChunk): void
     {
         $name = $widget->name;
 
@@ -189,21 +192,25 @@ readonly class Uploader
             return;
         }
 
-        $file = $_FILES[$name];
+        $files = $_FILES[$name];
 
-        // Replace the special characters (#22)
-        $file['name'][0] = $this->fs->standardizeFileName($file['name'][0]);
+        if (!$isChunk) {
+            $filename = \is_array($files['name']) ? $files['name'][0] : $files['name'];
+            $filename = $this->fs->standardizeFileName($filename);
+            $filename = $this->fs->tmpFileExists($filename) ? $this->fs->getUniqueTmpFileName($filename) : $filename;
 
-        // Set the UUID as the filename
-        if ($isChunk) {
-            $file['name'][0] = $request->request->get('qquuid').'.chunk';
+            // Check if the "multiple" attribute is set.
+            if (\is_array($files['name'])) {
+                $files['name'][0] = $filename;
+            } else {
+                $files['name'] = $filename;
+            }
+        } else {
+            $files['name'] = $request->request->get('qquuid').'.chunk';
         }
 
-        // Check if the file exists
-        if ($this->fs->tmpFileExists($file['name'][0])) {
-            $file['name'][0] = $this->fs->getTmpFileName($file['name'][0]);
-        }
+        unset($_FILES[$name]);
 
-        $_FILES[$widget->name] = $file;
+        $_FILES[$name] = $files;
     }
 }

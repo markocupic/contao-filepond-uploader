@@ -14,6 +14,7 @@ declare(strict_types=1);
 
 $GLOBALS['TL_LANG']['ERR']['fileminwidth'] = 'File %s must have a minimum width of %d pixels!';
 $GLOBALS['TL_LANG']['ERR']['fileminheight'] = 'File %s must have a minimum height of %d pixels!';
+$GLOBALS['TL_LANG']['ERR']['filepond.error'] = 'An unknown error occurred while trying to upload the file.';
 
 // Filepond
 $GLOBALS['TL_LANG']['MSC']['filepond.trans.labelIdle'] = 'Drag & Drop your files or <span class=\"filepond--label-action\">Browse</span>';

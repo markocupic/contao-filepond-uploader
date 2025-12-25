@@ -18,6 +18,11 @@ $GLOBALS['TL_LANG']['FFL']['filepondUploader'] = [
 ];
 
 /*
+ * Palettes
+ */
+$GLOBALS['TL_LANG']['tl_form_field']['image_config_legend'] = 'Image upload settings';
+
+/*
  * Fields
  */
 $GLOBALS['TL_LANG']['tl_form_field']['maxConnections'] = [
@@ -39,14 +44,6 @@ $GLOBALS['TL_LANG']['tl_form_field']['chunkSize'] = [
 $GLOBALS['TL_LANG']['tl_form_field']['concurrent'] = [
     'Enable concurrent chunking',
     'Activate this checkbox to enable concurrent chunking. Please also note the "Maximum number of connections" setting.',
-];
-$GLOBALS['TL_LANG']['tl_form_field']['maxWidth'] = [
-    'Maximum width (in pixels)',
-    'Here you can enter a maximum width of an image in pixels. Enter 0 to use system defaults.',
-];
-$GLOBALS['TL_LANG']['tl_form_field']['maxHeight'] = [
-    'Maximum height (in pixels)',
-    'Here you can enter a maximum height of an image in pixels. Enter 0 to use system defaults.',
 ];
 $GLOBALS['TL_LANG']['tl_form_field']['allowImageResize'] = [
     'Enable client side image resizing',

@@ -1,0 +1,162 @@
+<?php
+
+declare(strict_types=1);
+
+/*
+ * This file is part of Contao Filepond Uploader.
+ *
+ * (c) Marko Cupic <m.cupic@gmx.ch>
+ * @license MIT
+ * For the full copyright and license information,
+ * please view the LICENSE file that was distributed with this source code.
+ * @link https://github.com/markocupic/contao-filepond-uploader
+ */
+
+namespace Markocupic\ContaoFilepondUploader\Tests;
+
+use Contao\Config as ContaoConfig;
+use Contao\CoreBundle\Csrf\ContaoCsrfTokenManager;
+use Contao\TestCase\ContaoTestCase;
+use Markocupic\ContaoFilepondUploader\ConfigGenerator;
+use Markocupic\ContaoFilepondUploader\UploaderConfig;
+use PHPUnit\Framework\MockObject\MockObject;
+use Symfony\Bundle\SecurityBundle\Security;
+
+/**
+ * Tests for the ConfigGenerator class and its method generateFromWidgetAttributes.
+ */
+class ConfigGeneratorTest extends ContaoTestCase
+{
+    private MockObject $csrfTokenManager;
+
+    private MockObject $security;
+
+    private ConfigGenerator $configGenerator;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->csrfTokenManager = $this->createMock(ContaoCsrfTokenManager::class);
+        $this->security = $this->createMock(Security::class);
+
+        $this->configGenerator = new ConfigGenerator(
+            $this->csrfTokenManager,
+            $this->security,
+            true, // Debug mode
+        );
+    }
+
+    public function testGenerateFromWidgetAttributesWithBasicAttributes(): void
+    {
+        ContaoConfig::set('uploadPath', 'default_upload_path');
+
+        $attributes = [
+            'extensions' => 'jpg,png',
+            'multiple' => true,
+            'mSize' => 5,
+            'debug' => true,
+        ];
+
+        $uploaderConfig = $this->configGenerator->generateFromWidgetAttributes($attributes);
+
+        $this->assertInstanceOf(UploaderConfig::class, $uploaderConfig);
+        $this->assertSame('.jpg,.png', $uploaderConfig->getExtensions());
+        $this->assertTrue($uploaderConfig->isMultiple());
+        $this->assertSame(5, $uploaderConfig->getFileLimit());
+        $this->assertTrue($uploaderConfig->isDebugEnabled());
+        $this->assertSame('default_upload_path', $uploaderConfig->getUploadFolder());
+    }
+
+    public function testGenerateFromWidgetAttributesWithImageAttributes(): void
+    {
+        $attributes = [
+            'allowImageResize' => true,
+            'imageResizeTargetWidth' => 1920,
+            'imageResizeTargetHeight' => 1080,
+            'imageResizeMode' => 'cover',
+            'imageResizeUpscale' => true,
+        ];
+
+        $uploaderConfig = $this->configGenerator->generateFromWidgetAttributes($attributes);
+
+        $this->assertInstanceOf(UploaderConfig::class, $uploaderConfig);
+        $this->assertTrue($uploaderConfig->isImageResizingEnabled());
+        $this->assertSame(1920, $uploaderConfig->getImageResizeTargetWidth());
+        $this->assertSame(1080, $uploaderConfig->getImageResizeTargetHeight());
+        $this->assertSame('cover', $uploaderConfig->getImageResizeMode());
+        $this->assertTrue($uploaderConfig->isImageResizeUpscalingEnabled());
+    }
+
+    public function testGenerateFromWidgetAttributesWithChunking(): void
+    {
+        $attributes = [
+            'chunking' => true,
+            'chunkSize' => 1000000,
+            'concurrent' => true,
+        ];
+
+        $uploaderConfig = $this->configGenerator->generateFromWidgetAttributes($attributes);
+
+        $this->assertInstanceOf(UploaderConfig::class, $uploaderConfig);
+        $this->assertTrue($uploaderConfig->isChunkingEnabled());
+        $this->assertSame(1000000, $uploaderConfig->getChunkSize());
+        $this->assertTrue($uploaderConfig->isConcurrentEnabled());
+    }
+
+    public function testGenerateFromWidgetAttributesWithCustomUploadFolder(): void
+    {
+        $attributes = [
+            'uploadFolder' => 'custom_upload_folder',
+        ];
+
+        $uploaderConfig = $this->configGenerator->generateFromWidgetAttributes($attributes);
+
+        $this->assertInstanceOf(UploaderConfig::class, $uploaderConfig);
+        $this->assertSame('custom_upload_folder', $uploaderConfig->getUploadFolder());
+    }
+
+    public function testGenerateFromWidgetAttributesWithMissingUploadFolder(): void
+    {
+        ContaoConfig::set('uploadPath', 'fallback_upload_path');
+
+        $attributes = [];
+
+        $uploaderConfig = $this->configGenerator->generateFromWidgetAttributes($attributes);
+
+        $this->assertInstanceOf(UploaderConfig::class, $uploaderConfig);
+        $this->assertSame('fallback_upload_path', $uploaderConfig->getUploadFolder());
+    }
+
+    public function testGenerateFromWidgetAttributesWithLabels(): void
+    {
+        // Mock the global language array that generateLabels() uses
+        $GLOBALS['TL_LANG']['MSC']['filepond.trans.labelIdle'] = 'Drag & Drop your files here';
+
+        $attributes = [];
+
+        $uploaderConfig = $this->configGenerator->generateFromWidgetAttributes($attributes);
+
+        $this->assertInstanceOf(UploaderConfig::class, $uploaderConfig);
+        $labels = $uploaderConfig->getLabels();
+        $this->assertArrayHasKey('filepond', $labels);
+        $this->assertArrayHasKey('labelIdle', $labels['filepond']);
+        $this->assertSame('Drag & Drop your files here', $labels['filepond']['labelIdle']);
+    }
+
+    public function testGenerateFromWidgetAttributesWithDebugDisabled(): void
+    {
+        $this->configGenerator = new ConfigGenerator(
+            $this->csrfTokenManager,
+            $this->security,
+            false, // Debug mode
+        );
+
+        $attributes = [];
+
+        $uploaderConfig = $this->configGenerator->generateFromWidgetAttributes($attributes);
+
+        $this->assertInstanceOf(UploaderConfig::class, $uploaderConfig);
+        $this->assertFalse($uploaderConfig->isDebugEnabled());
+    }
+}

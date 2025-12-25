@@ -91,7 +91,7 @@ class ChunkUploader
 
         // Get the new file name if temporary file already exists
         if ($this->fs->tmpFileExists($fileName)) {
-            $fileName = $this->fs->getTmpFileName($fileName);
+            $fileName = $this->fs->getUniqueTmpFileName($fileName);
         }
 
         $file = $this->fs->mergeTmpFiles($chunks, $fileName);
