@@ -12,6 +12,8 @@ declare(strict_types=1);
  * @link https://github.com/markocupic/contao-filepond-uploader
  */
 
+use Contao\CoreBundle\DataContainer\PaletteManipulator;
+
 /**
  * Palettes
  */
@@ -28,6 +30,10 @@ $GLOBALS['TL_DCA']['tl_form_field']['palettes']['filepondUploader'] = '
  */
 $GLOBALS['TL_DCA']['tl_form_field']['subpalettes']['chunking'] = 'chunkSize,concurrent';
 $GLOBALS['TL_DCA']['tl_form_field']['subpalettes']['allowImageResize'] = 'imageResizeTargetWidth,imageResizeTargetHeight,imageResizeMode,imageResizeUpscale';
+
+PaletteManipulator::create()
+    ->addField('directUpload', 'storeFile')
+    ->applyToSubpalette('storeFile', 'tl_form_field');
 
 /**
  * Selectors
@@ -50,7 +56,7 @@ $GLOBALS['TL_DCA']['tl_form_field']['fields']['chunking'] = [
     'exclude'   => true,
     'inputType' => 'checkbox',
     'eval'      => ['tl_class' => 'clr m12', 'submitOnChange' => true],
-    'sql'       => "char(1) NOT NULL default ''",
+    'sql'       => ['type' => 'boolean', 'default' => false],
 ];
 
 $GLOBALS['TL_DCA']['tl_form_field']['fields']['chunkSize'] = [
@@ -65,14 +71,21 @@ $GLOBALS['TL_DCA']['tl_form_field']['fields']['concurrent'] = [
     'exclude'   => true,
     'inputType' => 'checkbox',
     'eval'      => ['tl_class' => 'w50 m12'],
-    'sql'       => "char(1) NOT NULL default ''",
+    'sql'       => ['type' => 'boolean', 'default' => false],
 ];
 
 $GLOBALS['TL_DCA']['tl_form_field']['fields']['addToDbafs'] = [
     'exclude'   => true,
     'inputType' => 'checkbox',
     'eval'      => ['tl_class' => 'clr'],
-    'sql'       => "char(1) NOT NULL default ''",
+    'sql'       => ['type' => 'boolean', 'default' => false],
+];
+
+$GLOBALS['TL_DCA']['tl_form_field']['fields']['directUpload'] = [
+    'filter'    => true,
+    'inputType' => 'checkbox',
+    'eval'      => ['tl_class' => 'w50'],
+    'sql'       => ['type' => 'boolean', 'default' => false],
 ];
 
 $GLOBALS['TL_DCA']['tl_form_field']['fields']['allowImageResize'] = [

@@ -180,6 +180,8 @@ readonly class ConfigGenerator
      */
     private function setUploadFolder(UploaderConfig $config, string $folder = ''): void
     {
+        // Will check if the folder is a valid string or binary UUID
+        // and convert it to a relative path
         if (Validator::isUuid($folder)) {
             $model = FilesModel::findByUuid($folder);
 

@@ -19,14 +19,12 @@ use Contao\Dbafs;
 use Markocupic\ContaoFilepondUploader\Widget\FilepondFrontendWidget;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Filesystem\Path;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Session\Session;
 
 readonly class Uploader
 {
     public function __construct(
-        private ChunkUploader $chunkUploader,
         private Filesystem $fs,
         private RequestStack $requestStack,
         #[Autowire('%kernel.project_dir%')]
@@ -37,39 +35,33 @@ readonly class Uploader
     /**
      * Upload the file.
      */
-    public function upload(Request $request, FilepondFrontendWidget $widget): array|null
+    public function upload(FilepondFrontendWidget $widget): array|null
     {
         $uploader = new FileUpload($widget->name, $widget->getConfiguration());
         $config = $widget->getUploaderConfig();
-        $isChunk = $config->isChunkingEnabled() && $request->request->has('qqpartindex');
 
         // Convert the $_FILES array to Contao format
-        $this->prepareGlobalFilesArray($request, $widget, $isChunk);
+        $this->prepareGlobalFilesArray($widget);
 
         // Configure the uploader
-        $this->configureUploader($uploader, $config, $isChunk);
+        $this->configureUploader($uploader, $config);
 
         // Run the upload
-        if (null === ($result = $this->runUpload($uploader, $widget, $request->attributes->get('_scope')))) {
+        if (null === ($result = $this->runUpload($uploader, $widget))) {
             return null;
         }
 
-        $filePath = $result[0];
-
-        // Handle the chunk
-        if ($isChunk) {
-            $filePath = $this->chunkUploader->handleChunk($request, $widget, $filePath);
-            $isChunk = !$this->chunkUploader->isLastChunk($request);
-        }
+        $filePath = Path::makeAbsolute($result[0], $this->projectDir);
 
         // Validate and move the file immediately
-        if ($config->isDirectUploadEnabled() && !$isChunk) {
+        if ($config->isDirectUploadEnabled()) {
             $filePath = $this->storeFile($config, $filePath);
         }
 
         return [
             'filePath' => $filePath,
             'transferKey' => $uploader->getTransferKey(),
+            'directUpload' => $config->isDirectUploadEnabled(),
         ];
     }
 
@@ -78,20 +70,21 @@ readonly class Uploader
      */
     public function storeFile(UploaderConfig $config, string $file): string
     {
-        // Convert uuid to binary format
-        if ($this->fs->fileExists($file)) {
-            // Move the temporary file
-            if ($config->isStoreFileEnabled() && $config->getUploadFolder()) {
-                $file = $this->fs->moveTmpFile($file, $config->getUploadFolder(), $config->isDoNotOverwriteEnabled());
-
-                // Add the file to the database-assisted file system
-                if ($config->isAddToDbafsEnabled() && null !== ($model = Dbafs::addResource($file))) {
-                    $file = $model->uuid;
-                }
-            }
-        } else {
+        if (!is_file($file)) {
             // The file does not exist
             throw new \Exception(\sprintf('The file "%s" does not exist', $file));
+        }
+
+        $file = Path::makeRelative($file, $this->projectDir);
+
+        // Move the temporary file
+        if ($config->isStoreFileEnabled() && $config->getUploadFolder()) {
+            $file = $this->fs->moveTmpFile($file, $config->getUploadFolder(), $config->isDoNotOverwriteEnabled());
+
+            // Add the file to the database-assisted file system
+            if ($config->isAddToDbafsEnabled() && null !== ($model = Dbafs::addResource($file))) {
+                $file = $model->uuid;
+            }
         }
 
         return $file;
@@ -100,7 +93,7 @@ readonly class Uploader
     /**
      * Run the upload.
      */
-    private function runUpload(FileUpload $uploader, FilepondFrontendWidget $widget, string $scope): array|null
+    private function runUpload(FileUpload $uploader, FilepondFrontendWidget $widget): array|null
     {
         $result = null;
 
@@ -115,7 +108,7 @@ readonly class Uploader
             if ($uploader->hasError()) {
                 /** @var Session $session */
                 $session = $this->requestStack->getSession();
-                $errors = $session->getFlashBag()->peek(\sprintf('contao.%s.error', $scope));
+                $errors = $session->getFlashBag()->peek('contao.FE.error');
 
                 foreach ($errors as $error) {
                     $widget->addError($error);
@@ -149,30 +142,25 @@ readonly class Uploader
     /**
      * Configure the uploader.
      */
-    private function configureUploader(FileUpload $uploader, UploaderConfig $config, bool $isChunk): void
+    private function configureUploader(FileUpload $uploader, UploaderConfig $config): void
     {
-        // Add the "chunk" extension to upload types
-        if ($isChunk) {
-            $uploader->setExtensions(['chunk']);
-        }
-
         // Set the minimum size limit
-        if ($config->getMinSizeLimit() > 0 && !$isChunk) {
+        if ($config->getMinSizeLimit() > 0) {
             $uploader->setMinFileSize($config->getMinSizeLimit());
         }
 
         // Set the maximum file or chunk size
-        if ($config->getMaxSizeLimit() > 0 || $isChunk) {
-            $uploader->setMaxFileSize($isChunk ? $config->getChunkSize() : $uploader->getMaxFileSize());
+        if ($config->getMaxSizeLimit() > 0) {
+            $uploader->setMaxFileSize($uploader->getMaxFileSize());
         }
 
         // Set the maximum image width
-        if ($config->getMaxImageWidth() > 0 && !$isChunk) {
+        if ($config->getMaxImageWidth() > 0) {
             $uploader->setImageWidth($config->getMaxImageWidth());
         }
 
         // Set the maximum image height
-        if ($config->getMaxImageHeight() > 0 && !$isChunk) {
+        if ($config->getMaxImageHeight() > 0) {
             $uploader->setImageHeight($config->getMaxImageHeight());
         }
     }
@@ -181,10 +169,9 @@ readonly class Uploader
      * Prepares the global $_FILES array for the given widget.
      *
      * This method modifies the global $_FILES array to standardize and set unique temporary file names
-     * for file uploads based on the widget and request data. Handles both standard uploads
-     * and chunked uploads.
+     * for file uploads based on the widget and request data.
      */
-    private function prepareGlobalFilesArray(Request $request, FilepondFrontendWidget $widget, bool $isChunk): void
+    private function prepareGlobalFilesArray(FilepondFrontendWidget $widget): void
     {
         $name = $widget->name;
 
@@ -194,19 +181,15 @@ readonly class Uploader
 
         $files = $_FILES[$name];
 
-        if (!$isChunk) {
-            $filename = \is_array($files['name']) ? $files['name'][0] : $files['name'];
-            $filename = $this->fs->standardizeFileName($filename);
-            $filename = $this->fs->tmpFileExists($filename) ? $this->fs->getUniqueTmpFileName($filename) : $filename;
+        $filename = \is_array($files['name']) ? $files['name'][0] : $files['name'];
+        $filename = $this->fs->standardizeFileName($filename);
+        $filename = $this->fs->tmpFileExists($filename) ? $this->fs->getUniqueTmpFileName($filename) : $filename;
 
-            // Check if the "multiple" attribute is set.
-            if (\is_array($files['name'])) {
-                $files['name'][0] = $filename;
-            } else {
-                $files['name'] = $filename;
-            }
+        // Check if the "multiple" attribute is set.
+        if (\is_array($files['name'])) {
+            $files['name'][0] = $filename;
         } else {
-            $files['name'] = $request->request->get('qquuid').'.chunk';
+            $files['name'] = $filename;
         }
 
         unset($_FILES[$name]);

@@ -37,6 +37,10 @@ $GLOBALS['TL_LANG']['tl_form_field']['addToDbafs'] = [
     'Add to DBAFS',
     'Add the file to database assisted file system. Note: the widget will return UUID instead of a path.',
 ];
+$GLOBALS['TL_LANG']['tl_form_field']['directUpload'] = [
+    'Upload files directly',
+    'Upload files directly to the target directory without submitting the form.',
+];
 $GLOBALS['TL_LANG']['tl_form_field']['chunkSize'] = [
     'Chunk size in bytes',
     'Please enter the chunk size in bytes (1MB = 1000000 bytes).',

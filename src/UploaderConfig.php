@@ -438,7 +438,7 @@ class UploaderConfig
      */
     public function isDirectUploadEnabled(): bool
     {
-        return $this->directUpload;
+        return $this->directUpload && $this->storeFile;
     }
 
     /**

@@ -46,6 +46,7 @@ class FilepondFrontendWidget extends Widget implements UploadableWidgetInterface
 
     public function __construct(array|null $attributes = null)
     {
+        // die(print_r($_POST,true));
         // First run the parent constructor, then add our custom attributes
         parent::__construct($attributes);
 
@@ -76,11 +77,6 @@ class FilepondFrontendWidget extends Widget implements UploadableWidgetInterface
 
         $request = $this->getRequest();
 
-        // Clean the chunk session when the widget is initialized in a non-ajax request
-        if (!$request->isXmlHttpRequest()) {
-            // $this->container->get('terminal42_fineuploader.chunk_uploader')->clearSession($this);
-        }
-
         if ($request->isXmlHttpRequest()) {
             /** @var FrontendHandler $frontendHandler */
             $frontendHandler = $this->container->get(FrontendHandler::class);
@@ -90,15 +86,6 @@ class FilepondFrontendWidget extends Widget implements UploadableWidgetInterface
                 throw new ResponseException($response);
             }
         }
-
-        // $response = $this->container->get('terminal42_fineuploader.request.frontend_handler')->handleWidgetInitRequest(
-        // $this->container->get('request_stack')->getCurrentRequest(),
-        // $this
-        // );
-
-        // if (null !== $response) {
-        // throw new ResponseException($response);
-        // }
     }
 
     /**
@@ -119,8 +106,8 @@ class FilepondFrontendWidget extends Widget implements UploadableWidgetInterface
                 break;
 
             case 'maxConnections':
-            case 'maxWidth':
-            case 'maxHeight':
+            case 'maxImageWidth':
+            case 'maxImageHeight':
             case 'imageResizeTargetWidth':
             case 'imageResizeTargetHeight':
                 $this->arrConfiguration[$strKey] = (int) $varValue ?? 0;
@@ -150,6 +137,7 @@ class FilepondFrontendWidget extends Widget implements UploadableWidgetInterface
             case 'imageResizeUpscale':
             case 'storeFile':
             case 'addToDbafs':
+            case 'directUpload':
                 $this->arrConfiguration[$strKey] = (bool) $varValue;
                 break;
 
@@ -169,7 +157,9 @@ class FilepondFrontendWidget extends Widget implements UploadableWidgetInterface
                 } else {
                     unset($this->arrAttributes['required']);
                 }
-            // DO NOT BREAK HERE
+            // DO NOT BREAK HERE:
+            // We pass the value to the parent class too,
+            // so it can perform its own processing.
 
             // no break
             default:
@@ -189,13 +179,6 @@ class FilepondFrontendWidget extends Widget implements UploadableWidgetInterface
      */
     public function parse($arrAttributes = null): string
     {
-        // Initiate the session if chunking is enabled (#86).
-        // if ($this->getUploaderConfig()->isChunkingEnabled()) {
-        // /** @var ChunkUploader $chunkUploader */
-        // $chunkUploader = $this->container->get('terminal42_fineuploader.chunk_uploader');
-        // $chunkUploader->initSession($this);
-        // }
-
         if (!$this->jsConfig) {
             /** @var ConfigGenerator $configGenerator */
             $this->jsConfig = $this->getConfigGenerator()->generateJavaScriptConfig($this->getUploaderConfig());
@@ -238,10 +221,10 @@ class FilepondFrontendWidget extends Widget implements UploadableWidgetInterface
     {
         $files = $this->getWidgetHelper()->getFilesFromFileInputField($varInput);
 
-        $isMultiple = !empty($this->arrConfiguration['multiple']) && true === $this->arrConfiguration['multiple'];
+        $isMultiple = true === $this->arrConfiguration['multiple'] ?? false;
 
-        // If "multiple" is set, the input type is "array", otherwise "string".
-        $varInput = $isMultiple ? $files : (!empty($files[0]) ? $files[0] : '');
+        // If "multiple" is set, the input type is "array", otherwise "\SplFileInfo" or null.
+        $varInput = $isMultiple ? $files : (!empty($files[0]) ? $files[0] : null);
 
         $files = $this->container->get(Validator::class)->validateInput($this, $varInput);
 

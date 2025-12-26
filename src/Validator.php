@@ -28,20 +28,20 @@ readonly class Validator
     /**
      * Validate the widget input.
      */
-    public function validateInput(FilepondFrontendWidget $widget, array|string $input): array|string
+    public function validateInput(FilepondFrontendWidget $widget, array|string|null $varInput): array|string
     {
         // No input
-        if (empty($input)) {
+        if (empty($varInput)) {
             return $this->validateEmptyValue($widget);
         }
 
         // If the "multiple" attribute is set,
         // FilePond submits the input as "array", otherwise as "string".
-        if (\is_array($input)) {
-            return $this->validateMultipleFiles($widget, array_filter($input));
+        if (\is_array($varInput)) {
+            return $this->validateMultipleFiles($widget, array_filter($varInput));
         }
 
-        return $this->validateSingleFile($widget, $input);
+        return $this->validateSingleFile($widget, $varInput);
     }
 
     /**
@@ -66,33 +66,37 @@ readonly class Validator
     /**
      * Validate the single file.
      */
-    private function validateSingleFile(FilepondFrontendWidget $widget, string $input): string
+    private function validateSingleFile(FilepondFrontendWidget $widget, string $varInput): string
     {
         try {
-            return $this->uploader->storeFile($widget->getUploaderConfig(), $input);
+            return $this->uploader->storeFile($widget->getUploaderConfig(), $varInput);
         } catch (\Exception $e) {
             $widget->addError($GLOBALS['TL_LANG']['ERR']['emptyUpload']);
         }
 
-        return $input;
+        return $varInput;
     }
 
     /**
-     * Validate the multiple files.
+     * Validate multiple files.
+     *
+     * @return array<string>
      */
-    private function validateMultipleFiles(FilepondFrontendWidget $widget, array $inputs): array
+    private function validateMultipleFiles(FilepondFrontendWidget $widget, array $varInputs): array
     {
         $config = $widget->getUploaderConfig();
 
         // Limit the number of uploads
         if ($config->getFileLimit() > 0) {
-            $inputs = \array_slice($inputs, 0, $config->getFileLimit());
+            $varInputs = \array_slice($varInputs, 0, $config->getFileLimit());
         }
 
+        $inputs = [];
+
         // Store the files
-        foreach ($inputs as $k => $v) {
+        foreach ($varInputs as $k => $splFileInfo) {
             try {
-                $inputs[$k] = $this->uploader->storeFile($config, $v);
+                $inputs[$k] = $this->uploader->storeFile($config, $splFileInfo);
             } catch (\Exception $e) {
                 $widget->addError($GLOBALS['TL_LANG']['ERR']['emptyUpload']);
             }

@@ -18,7 +18,7 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
 readonly class TransferKey
 {
-    public const PREFIX = 'filepond';
+    public const PREFIX_FILE_UPLOAD = 'filepond';
 
     private const TRANSFER_KEY_PARTS_COUNT = 3;
 
@@ -39,7 +39,7 @@ readonly class TransferKey
         $uniqueId = uniqid();
         $hash = $this->generateHash($uniqueId);
 
-        return \sprintf('%s_%s_%s', self::PREFIX, $uniqueId, $hash);
+        return \sprintf('%s_%s_%s', self::PREFIX_FILE_UPLOAD, $uniqueId, $hash);
     }
 
     public function validate(string $transferKey): bool
@@ -69,7 +69,7 @@ readonly class TransferKey
             return null;
         }
 
-        if (self::PREFIX !== $parts[self::PART_INDEX_PREFIX]) {
+        if (self::PREFIX_FILE_UPLOAD !== $parts[self::PART_INDEX_PREFIX]) {
             return null;
         }
 

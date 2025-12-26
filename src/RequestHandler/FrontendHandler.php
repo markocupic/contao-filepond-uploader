@@ -15,6 +15,7 @@ declare(strict_types=1);
 namespace Markocupic\ContaoFilepondUploader\RequestHandler;
 
 use Contao\CoreBundle\Routing\ScopeMatcher;
+use Markocupic\ContaoFilepondUploader\Event\ChunkUploadEvent;
 use Markocupic\ContaoFilepondUploader\Event\FileUploadEvent;
 use Markocupic\ContaoFilepondUploader\Widget\FilepondFrontendWidget;
 use Psr\Log\LoggerInterface;
@@ -28,6 +29,11 @@ use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 #[Autoconfigure(public: true)]
 readonly class FrontendHandler
 {
+    private const ACTIONS = [
+        'FILEPOND_UPLOAD' => 'filepond_upload',
+        'FILEPOND_UPLOAD_CHUNK' => 'filepond_upload_chunk',
+    ];
+
     public function __construct(
         private EventDispatcherInterface $eventDispatcher,
         private LoggerInterface|null $contaoErrorLogger,
@@ -54,6 +60,12 @@ readonly class FrontendHandler
 
         try {
             $this->validateRequest($request);
+
+            $action = $this->getAction($request);
+            if ($action === self::ACTIONS['FILEPOND_UPLOAD_CHUNK']) {
+                // Do some additional validation for chunk requests
+                $this->validateChunkRequest($request);
+            }
         } catch (\Exception $e) {
             $this->contaoErrorLogger?->error($e->getMessage());
 
@@ -71,10 +83,23 @@ readonly class FrontendHandler
      */
     protected function getUploadResponse(EventDispatcherInterface $eventDispatcher, Request $request, FilepondFrontendWidget $widget): JsonResponse
     {
-        $event = new FileUploadEvent($request, new JsonResponse(), $widget);
-        $eventDispatcher->dispatch($event);
+        $action = $this->getAction($request);
 
-        return $event->getResponse();
+        if ($action === self::ACTIONS['FILEPOND_UPLOAD_CHUNK']) {
+            $event = new ChunkUploadEvent($request, new JsonResponse(), $widget);
+            $eventDispatcher->dispatch($event);
+
+            return $event->getResponse();
+        }
+
+        if ($action === self::ACTIONS['FILEPOND_UPLOAD']) {
+            $event = new FileUploadEvent($request, new JsonResponse(), $widget);
+            $eventDispatcher->dispatch($event);
+
+            return $event->getResponse();
+        }
+
+        throw new \RuntimeException('Invalid action submitted!');
     }
 
     /**
@@ -94,8 +119,39 @@ readonly class FrontendHandler
             throw new BadRequestHttpException('Request method must POST.');
         }
 
-        if ('filepond_upload' !== $request->request->get('action')) {
+        $action = $this->getAction($request);
+
+        if (!\in_array($action, self::ACTIONS, true)) {
             throw new BadRequestHttpException('Invalid $_POST["action"] value submitted!');
         }
+    }
+
+    /**
+     * Validate the request.
+     */
+    private function validateChunkRequest(Request $request): void
+    {
+        $action = $this->getAction($request);
+
+        if (self::ACTIONS['FILEPOND_UPLOAD_CHUNK'] !== $action) {
+            throw new BadRequestHttpException('Invalid $_POST["action"] value submitted!');
+        }
+
+        $post = ['fileName', 'offset', 'totalSize'];
+
+        foreach ($post as $key) {
+            if (!$request->request->has($key)) {
+                throw new BadRequestHttpException('Missing POST parameter: '.$key);
+            }
+        }
+
+        if (empty($_FILES['chunk'])) {
+            throw new BadRequestHttpException('Missing FILES parameter: "chunk"');
+        }
+    }
+
+    private function getAction(Request $request): string
+    {
+        return $request->request->get('action');
     }
 }

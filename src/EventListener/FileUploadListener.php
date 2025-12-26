@@ -35,7 +35,7 @@ readonly class FileUploadListener
     public function onFileUpload(FileUploadEvent $event): void
     {
         $widget = $event->getWidget();
-        $arrUploadResult = $this->uploader->upload($event->getRequest(), $widget);
+        $arrUploadResult = $this->uploader->upload($widget);
 
         if (null === $arrUploadResult) {
             $event->setResponse(
@@ -90,6 +90,7 @@ readonly class FileUploadListener
                 'filePondItemId' => $event->getRequest()->attributes->get('filePondItemId'),
                 'error' => null,
                 'transferKey' => $arrUploadResult['transferKey'],
+                'directUpload' => $arrUploadResult['directUpload'],
             ];
         }
 

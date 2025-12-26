@@ -14,6 +14,7 @@ declare(strict_types=1);
 
 namespace Markocupic\ContaoFilepondUploader\CleanUp;
 
+use Markocupic\ContaoFilepondUploader\Chunk\ChunkProcessor;
 use Markocupic\ContaoFilepondUploader\TransferKey;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -56,8 +57,8 @@ readonly class PurgeTempFolder
         return (new Finder())
             ->directories()
             ->in($tmpPath)
-            ->name(TransferKey::PREFIX.'_*')
-            ->date('<= now - 1 week')
+            ->name([TransferKey::PREFIX_FILE_UPLOAD.'_*', ChunkProcessor::PREFIX_CHUNK_UPLOAD.'_*'])
+            ->date('<= now - 1 day')
         ;
     }
 

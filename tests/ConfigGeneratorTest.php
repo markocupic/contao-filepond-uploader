@@ -159,4 +159,62 @@ class ConfigGeneratorTest extends ContaoTestCase
         $this->assertInstanceOf(UploaderConfig::class, $uploaderConfig);
         $this->assertFalse($uploaderConfig->isDebugEnabled());
     }
+
+    public function testGenerateFromWidgetAttributesWithDirectUploadEnabled(): void
+    {
+        $attributes = [
+            'directUpload' => true,
+            'storeFile' => true,
+        ];
+
+        $uploaderConfig = $this->configGenerator->generateFromWidgetAttributes($attributes);
+
+        $this->assertInstanceOf(UploaderConfig::class, $uploaderConfig);
+        $this->assertTrue($uploaderConfig->isDirectUploadEnabled());
+        $this->assertTrue($uploaderConfig->isStoreFileEnabled());
+    }
+
+    public function testGenerateFromWidgetAttributesWithDirectUploadDisabled(): void
+    {
+        $attributes = [
+            'directUpload' => false,
+            'storeFile' => true,
+        ];
+
+        $uploaderConfig = $this->configGenerator->generateFromWidgetAttributes($attributes);
+
+        $this->assertInstanceOf(UploaderConfig::class, $uploaderConfig);
+        $this->assertFalse($uploaderConfig->isDirectUploadEnabled());
+    }
+
+    public function testGenerateFromWidgetAttributesDirectUploadRequiresStoreFile(): void
+    {
+        // directUpload is true, but storeFile is false
+        $attributes = [
+            'directUpload' => true,
+            'storeFile' => false,
+        ];
+
+        $uploaderConfig = $this->configGenerator->generateFromWidgetAttributes($attributes);
+
+        $this->assertInstanceOf(UploaderConfig::class, $uploaderConfig);
+        // isDirectUploadEnabled() returns only true if both flags are set
+        $this->assertFalse($uploaderConfig->isDirectUploadEnabled());
+    }
+
+    public function testGenerateFromWidgetAttributesWithStoreFileOptions(): void
+    {
+        $attributes = [
+            'storeFile' => true,
+            'doNotOverwrite' => true,
+            'addToDbafs' => true,
+        ];
+
+        $uploaderConfig = $this->configGenerator->generateFromWidgetAttributes($attributes);
+
+        $this->assertInstanceOf(UploaderConfig::class, $uploaderConfig);
+        $this->assertTrue($uploaderConfig->isStoreFileEnabled());
+        $this->assertTrue($uploaderConfig->isDoNotOverwriteEnabled());
+        $this->assertTrue($uploaderConfig->isAddToDbafsEnabled());
+    }
 }

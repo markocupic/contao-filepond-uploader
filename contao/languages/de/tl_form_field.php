@@ -37,6 +37,10 @@ $GLOBALS['TL_LANG']['tl_form_field']['addToDbafs'] = [
     'Zum DBAFS hinzufügen',
     'Die Datei zum datenbankunterstützten Dateisystem hinzufügen. Bitte beachten: In diesem Fall gibt das Formularfeld eine UUID statt dem Pfad zurück.',
 ];
+$GLOBALS['TL_LANG']['tl_form_field']['directUpload'] = [
+    'Dateien direkt hochladen',
+    'Dateien direkt und ohne das Formular abzusenden ins Zielverzeichnis laden.',
+];
 $GLOBALS['TL_LANG']['tl_form_field']['chunkSize'] = [
     'Chunk-Grösse in Bytes',
     'Bitte geben Sie die Chunk-Grösse in Bytes ein  (1MB = 1000000 Bytes).',

@@ -67,8 +67,9 @@ readonly class WidgetHelper
 
     /**
      * Converts transferKeys from the file input field
-     * to relative file paths
-     * and returns them as an array.
+     * to SplFileInfo objects and returns them as an array.
+     *
+     * @return array<string>
      */
     public function getFilesFromFileInputField(array|string|null $files): array
     {
@@ -77,8 +78,6 @@ readonly class WidgetHelper
         $return = [];
 
         foreach ($files as $transferKey) {
-            $model = null;
-
             if ('' === $transferKey || 'undefined' === $transferKey) {
                 continue;
             }
@@ -87,28 +86,15 @@ readonly class WidgetHelper
                 throw new \Exception('Invalid transferKey: '.$transferKey);
             }
 
-            // Get the file model
-            if (Validator::isUuid($transferKey)) {
-                if (null === ($model = FilesModel::findByUuid($transferKey))) {
-                    continue;
-                }
-
-                $filePath = $model->path;
-            } else {
-                if (null === ($objSplFileInfo = $this->getFileFromTransferKey($transferKey))) {
-                    continue;
-                }
-
-                $filePath = Path::makeRelative($objSplFileInfo->getRealPath(), $this->projectDir);
-            }
-
-            $file = new File($filePath);
-
-            if (!$file->exists()) {
+            if (null === ($objSplFileInfo = $this->getFileFromTransferKey($transferKey))) {
                 continue;
             }
 
-            $return[] = $file->path;
+            if (!is_file($objSplFileInfo->getRealPath())) {
+                continue;
+            }
+
+            $return[] = $objSplFileInfo->getRealPath();
         }
 
         return $return;

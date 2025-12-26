@@ -187,16 +187,17 @@ class ContaoFilepondPlugin {
 
                     // Remove custom error boxes
                     const errBoxes = document.querySelectorAll('#filepond--item-' + itemId + ' .filepond--contao-error');
+
                     for (const errBox of errBoxes) {
                         errBox.remove();
                     }
 
-                    const chunkSize = 5000000; // 500 KB
+                    const doChunkedUpload = true === this.jsConfig.chunking && this.jsConfig.chunkSize > 0 && file.size > this.jsConfig.chunkSize;
 
                     // ---------------------------------------------------------
                     // CASE 1: Normal upload (file smaller than chunk size)
                     // ---------------------------------------------------------
-                    if (file.size <= chunkSize) {
+                    if (!doChunkedUpload) {
 
                         const formData = new FormData();
                         formData.append(fieldName, file, file.name);
@@ -221,7 +222,11 @@ class ContaoFilepondPlugin {
                                 const json = JSON.parse(request.response);
 
                                 if (json.success === true) {
-                                    load(json.transferKey);
+                                    if (true === json.directUpload ?? false) {
+                                        load(''); // Prevent filepond uploading the file twice.
+                                    } else {
+                                        load(json.transferKey);
+                                    }
                                 } else {
                                     error(json.error || 'Upload error');
                                 }
@@ -247,6 +252,7 @@ class ContaoFilepondPlugin {
                     let offset = 0;
                     let aborted = false;
                     let activeRequest = null;
+                    let chunkSize = this.jsConfig.chunkSize;
 
                     const uploadChunk = () => {
                         if (aborted) {
@@ -292,8 +298,13 @@ class ContaoFilepondPlugin {
                                 if (offset < file.size) {
                                     uploadChunk();
                                 } else {
-                                    // All chunks uploaded → finalize
-                                    load(json.transferKey);
+                                    // All chunks uploaded:
+                                    // Append the transferkey to the filepond file input field
+                                    if (true === json.directUpload ?? false) {
+                                        load(''); // Prevent filepond uploading the file twice.
+                                    } else {
+                                        load(json.transferKey);
+                                    }
                                 }
 
                             } else {
@@ -308,7 +319,7 @@ class ContaoFilepondPlugin {
                         request.send(formData);
                     };
 
-                    uploadChunk();
+                    uploadChunk(this.jsConfig.chunkSize);
 
                     return {
                         abort: () => {
