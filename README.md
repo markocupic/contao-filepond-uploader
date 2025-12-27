@@ -12,6 +12,7 @@ You can use **client side image resizing** and **chunking** for uploading large 
 For custom use cases you can embed the widget within a Codefog Haste Form (see below).
 
 ### Example frontend module controller with a minimum configuration
+
 ```
 <?php
 
@@ -69,6 +70,7 @@ class ExampleController extends AbstractFrontendModuleController
 ```
 
 ### Full configuration
+
 ```
 $form = new \Codefog\HasteBundle\Form\Form('MyFileUploadForm', 'POST');
 
@@ -90,12 +92,12 @@ $form->addFormField('filepond', [
         'extensions' => 'jpg,jpeg,png', // Accepted extensions
         'maxConnections' => 3, // Maximum number of simultaneous uploads
          // Images
-        'minWidth' => 1000, // Minimum width for images (pixels)
-        'maxWidth' => 5000, // Maximum width for images (pixels)
+        'minImageWidth' => 1000, // Minimum width for images (pixels)
+        'maxImageWidth' => 6000, // Maximum width for images (pixels)
          // Client side image resizing
         'allowImageResize' => true, // Allow client side image resizing
-        'imageResizeTargetWidth' => 2000, // Resized image width
-        'imageResizeTargetHeight' => 2000, // Resized image height
+        'imageResizeTargetWidth' => 1600, // Image will be resized client side to this width
+        'imageResizeTargetHeight' => 1600, // Image will be resized client side to this height
         'imageResizeMode' => 'contain', // Use "contain", "force", "contain" -> https://pqina.nl/filepond/docs/api/plugins/image-resize/#properties
         'imageResizeUpscale' => false, // Set to false to prevent upscaling of images smaller than the target size
     ],
