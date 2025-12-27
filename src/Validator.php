@@ -69,6 +69,8 @@ readonly class Validator
     private function validateSingleFile(FilepondFrontendWidget $widget, string $varInput): string
     {
         try {
+            // Returns the UUID of the uploaded file if addToDbafs is set to true,
+            // otherwise the relative path to the uploaded file.
             return $this->uploader->storeFile($widget->getUploaderConfig(), $varInput);
         } catch (\Exception $e) {
             $widget->addError($GLOBALS['TL_LANG']['ERR']['emptyUpload']);
@@ -96,6 +98,8 @@ readonly class Validator
         // Store the files
         foreach ($varInputs as $k => $splFileInfo) {
             try {
+                // Returns the UUID of the uploaded file if addToDbafs is set to true,
+                // otherwise the relative path to the uploaded file.
                 $inputs[$k] = $this->uploader->storeFile($config, $splFileInfo);
             } catch (\Exception $e) {
                 $widget->addError($GLOBALS['TL_LANG']['ERR']['emptyUpload']);

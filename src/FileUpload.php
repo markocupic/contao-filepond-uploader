@@ -226,7 +226,7 @@ class FileUpload extends \Contao\FileUpload
 
         foreach ($files as $file) {
             $fileName = $file->getFilename();
-
+            dump($fileName);
             if (preg_match('/__[0-9]+\.'.preg_quote($pathinfo['extension'], '/').'$/', $fileName)) {
                 $fileName = str_replace('.'.$pathinfo['extension'], '', $fileName);
                 $value = (int) substr($fileName, strrpos($fileName, '_') + 1);

@@ -15,7 +15,6 @@ declare(strict_types=1);
 namespace Markocupic\ContaoFilepondUploader;
 
 use Contao\Config;
-use Contao\File;
 use Contao\Files;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Filesystem\Path;
@@ -56,23 +55,6 @@ readonly class Filesystem
     public function tmpFileExists(string $file): bool
     {
         return $this->fileExists(Path::join($this->tmpPath.'/'.$file));
-    }
-
-    /**
-     * Merge multiple temporary files into one.
-     */
-    public function mergeTmpFiles(array $files, string $fileName): File
-    {
-        $file = new File(Path::join($this->getTmpPath(), $fileName));
-
-        foreach ($files as $filePath) {
-            $file->append(file_get_contents(Path::join($this->projectDir, $filePath)), '');
-            Files::getInstance()->delete($filePath);
-        }
-
-        $file->close();
-
-        return $file;
     }
 
     /**
@@ -191,6 +173,7 @@ readonly class Filesystem
         $offset = 1;
         $pathInfo = pathinfo($filePath);
         $name = $pathInfo['filename'];
+        $extension = $pathInfo['extension'];
 
         // Uses the Symfony Finder to find all files in the target folder and convert their relative path names into an array.
         $allFiles = iterator_to_array(Finder::create()->files()->in(Path::join($this->projectDir, $folder))->getIterator());
@@ -203,7 +186,7 @@ readonly class Filesystem
         // Example: For photo.jpg, the following files are found:
         // photo.jpg, photo__1.jpg, photo__2.jpg, photo_backup.jpg, etc.
         $files = preg_grep(
-            '/^'.preg_quote($name, '/').'.*\.'.preg_quote($pathInfo['extension'], '/').'/',
+            '/^'.preg_quote($name, '/').'.*\.'.preg_quote($extension, '/').'/',
             $allFiles,
         );
 
@@ -212,8 +195,8 @@ readonly class Filesystem
         // - Saves the highest number found in $offset
         // Example: If photo__1.jpg, photo__3.jpg, photo__7.jpg exist, $offset becomes 7.
         foreach ($files as $file) {
-            if (preg_match('/__[0-9]+\.'.preg_quote($pathInfo['extension'], '/').'$/', $file)) {
-                $file = str_replace('.'.$pathInfo['extension'], '', $file);
+            if (preg_match('/__[0-9]+\.'.preg_quote($extension, '/').'$/', $file)) {
+                $file = str_replace('.'.$extension, '', $file);
                 $value = (int) substr($file, strrpos($file, '_') + 1);
                 $offset = max($offset, $value);
             }

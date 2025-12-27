@@ -45,10 +45,6 @@ $GLOBALS['TL_LANG']['tl_form_field']['chunkSize'] = [
     'Chunk size in bytes',
     'Please enter the chunk size in bytes (1MB = 1000000 bytes).',
 ];
-$GLOBALS['TL_LANG']['tl_form_field']['concurrent'] = [
-    'Enable concurrent chunking',
-    'Activate this checkbox to enable concurrent chunking. Please also note the "Maximum number of connections" setting.',
-];
 $GLOBALS['TL_LANG']['tl_form_field']['allowImageResize'] = [
     'Enable client side image resizing',
     'Here you can activate the image resizing before the image is uploaded to the server.',

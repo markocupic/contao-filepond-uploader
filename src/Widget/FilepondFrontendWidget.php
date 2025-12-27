@@ -46,7 +46,6 @@ class FilepondFrontendWidget extends Widget implements UploadableWidgetInterface
 
     public function __construct(array|null $attributes = null)
     {
-        // die(print_r($_POST,true));
         // First run the parent constructor, then add our custom attributes
         parent::__construct($attributes);
 
@@ -56,7 +55,7 @@ class FilepondFrontendWidget extends Widget implements UploadableWidgetInterface
         $this->arrConfiguration['maxImageWidth'] = Config::get('imageWidth') ?? 0; // max image width in pixels
         $this->arrConfiguration['maxImageHeight'] = Config::get('imageHeight') ?? 0; // max image height in pixels
 
-        if (!empty($attributes) && \is_array($attributes)) {
+        if (!empty($attributes)) {
             // Override defaults with values form field config.
             $attr = $attributes;
             $row = [];
@@ -174,29 +173,14 @@ class FilepondFrontendWidget extends Widget implements UploadableWidgetInterface
 
     /**
      * Parse the template file and return it as string.
-     *
-     * @param array|null $arrAttributes
      */
     public function parse($arrAttributes = null): string
     {
         if (!$this->jsConfig) {
-            /** @var ConfigGenerator $configGenerator */
             $this->jsConfig = $this->getConfigGenerator()->generateJavaScriptConfig($this->getUploaderConfig());
         }
 
         return parent::parse($arrAttributes);
-    }
-
-    /**
-     * Get the uploader config.
-     */
-    public function getUploaderConfig(): UploaderConfig
-    {
-        if (null === $this->uploaderConfig) {
-            $this->uploaderConfig = $this->getConfigGenerator()->generateFromWidgetAttributes($this->arrConfiguration);
-        }
-
-        return $this->uploaderConfig;
     }
 
     /**
@@ -217,17 +201,59 @@ class FilepondFrontendWidget extends Widget implements UploadableWidgetInterface
         throw new \BadMethodCallException('Use the parse() method instead');
     }
 
+    /**
+     * Get the uploader config.
+     */
+    public function getUploaderConfig(): UploaderConfig
+    {
+        if (null === $this->uploaderConfig) {
+            $this->uploaderConfig = $this->getConfigGenerator()->generateFromWidgetAttributes($this->arrConfiguration);
+        }
+
+        return $this->uploaderConfig;
+    }
+
+    /**
+     * This will convert the transfer keys to absolute file paths,
+     * move the files to the destination directory and return the files array.
+     *
+     * Example return:
+     *
+     * ```php
+     * Array
+     * (
+     *     [Filepond_0] => Array
+     *         (
+     *             [name] => picture_1.jpg
+     *             [type] => image/jpeg
+     *             [tmp_name] => /home/aeracing/public_html/contao5/files/filepond_test/picture_1.jpg
+     *             [error] => 0
+     *             [size] => 3421295
+     *             [uuid] => 20e2c765-e2ab-11f0-b0b3-02000a14000a
+     *             [uploaded] => 1
+     *         )
+     * )
+     * ```
+     */
     protected function validator(mixed $varInput): array|string
     {
+        // This will transform the transfer keys to absolute file paths.
+        // If directUpload is set to true, FilePond will not send any transfer keys.
         $files = $this->getWidgetHelper()->getFilesFromFileInputField($varInput);
 
         $isMultiple = true === $this->arrConfiguration['multiple'] ?? false;
 
-        // If "multiple" is set, the input type is "array", otherwise "\SplFileInfo" or null.
-        $varInput = $isMultiple ? $files : (!empty($files[0]) ? $files[0] : null);
+        // If "multiple" is set, the input type is "array", otherwise "string or null.
+        $varInput = match ($isMultiple) {
+            true => $files,
+            false => !empty($files[0]) ? $files[0] : null,
+        };
 
+        // This will move the files to the destination directory
+        // and return the UUIDs or relative paths if addToDbafs is set to false.
         $files = $this->container->get(Validator::class)->validateInput($this, $varInput);
 
+        // Returns a mock of the PHP $_FILES array that is used by Contao's Form instance.
         return $this->getWidgetHelper()->getFilesArray($this->strName, array_filter((array) $files), $this->storeFile);
     }
 
@@ -245,7 +271,8 @@ class FilepondFrontendWidget extends Widget implements UploadableWidgetInterface
     {
         $manager = $this->getAssetsManager();
 
-        $assets = $manager->getFrontendAssets($this->arrConfiguration['allowImageResize'] ?? false);
+        $allowImageResize = $this->arrConfiguration['allowImageResize'] ?? false;
+        $assets = $manager->getFrontendAssets($allowImageResize);
 
         $manager->includeAssets($assets);
     }

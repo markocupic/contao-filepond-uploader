@@ -16,7 +16,6 @@ namespace Markocupic\ContaoFilepondUploader;
 
 use Contao\File;
 use Contao\FilesModel;
-use Contao\Model\Collection;
 use Contao\StringUtil;
 use Contao\Validator;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
@@ -35,34 +34,6 @@ readonly class WidgetHelper
         #[Autowire('%markocupic_contao_filepond_uploader.tmp_path%')]
         private string $tmpPath,
     ) {
-    }
-
-    /**
-     * Generate the value.
-     */
-    public function generateValue(array $value): array
-    {
-        if (\count($value) < 1) {
-            return [];
-        }
-
-        $uuids = [];
-        $tmpFiles = [];
-
-        // Split the files into UUIDs and temporary ones
-        foreach ($value as $file) {
-            if (Validator::isBinaryUuid($file)) {
-                $uuids[] = $file;
-            } else {
-                $tmpFiles[] = $file;
-            }
-        }
-
-        // Get the database files
-        $return = $this->generateDatabaseFiles($uuids);
-
-        // Get the temporary files
-        return array_merge($return, $this->generateTmpFiles($tmpFiles));
     }
 
     /**
@@ -106,21 +77,21 @@ readonly class WidgetHelper
             return null;
         }
 
-        $finder = new Finder();
-        $finder->files()->in(Path::join($this->projectDir, $this->tmpPath, $transferKey));
+        $tmpPath = Path::join($this->projectDir, $this->tmpPath, $transferKey);
 
-        // check if there are any search results
-        if ($finder->hasResults()) {
-            foreach ($finder as $file) {
-                return $file;
-            }
+        if (!is_dir($tmpPath)) {
+            return null;
         }
 
-        return null;
+        $finder = new Finder();
+        $results = iterator_to_array($finder->files()->in($tmpPath));
+
+        // Each folder contains only one file
+        return $results[array_key_first($results)] ?? null;
     }
 
     /**
-     * Returns an array with all the information per file that Contao expects for the widget's value or the session value.
+     * Returns an array with all the information per file that Contao expects for the widget's value.
      */
     public function getFilesArray(string $name, array $files, bool|null $storeFile = null): array
     {
@@ -167,67 +138,5 @@ readonly class WidgetHelper
         }
 
         return $return;
-    }
-
-    /**
-     * Add the files to the session in order to reproduce Contao 4.13 uploader behavior.
-     */
-    public function addFilesToSession(string $name, array $files, bool $storeFile = true): void
-    {
-        $files = $this->getFilesArray($name, $files, $storeFile);
-
-        foreach ($files as $name => $data) {
-            $_SESSION['FILES'][$name] = $data;
-        }
-    }
-
-    /**
-     * Generate the database files.
-     */
-    private function generateDatabaseFiles(array $uuids): array
-    {
-        if (null === ($fileModels = FilesModel::findMultipleByUuids($uuids))) {
-            return [];
-        }
-
-        $files = [];
-
-        /**
-         * @var Collection $fileModels
-         * @var FilesModel $fileModel
-         */
-        foreach ($fileModels as $fileModel) {
-            // Skip not-existing files
-            if (!$this->fs->fileExists($fileModel->path)) {
-                continue;
-            }
-
-            $files[StringUtil::binToUuid($fileModel->uuid)] = $fileModel->path;
-        }
-
-        return $files;
-    }
-
-    /**
-     * Generate the temporary files.
-     */
-    private function generateTmpFiles(array $tmpFiles): array
-    {
-        $files = [];
-
-        foreach ($tmpFiles as $file) {
-            if (\is_array($file)) {
-                $file = $file['tmp_name'] ?? null;
-            }
-
-            // Skip not-existing files
-            if (!$file || !$this->fs->fileExists($file)) {
-                continue;
-            }
-
-            $files[$file] = $file;
-        }
-
-        return $files;
     }
 }

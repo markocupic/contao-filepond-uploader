@@ -82,11 +82,6 @@ class UploaderConfig
     private int $chunkSize = 0;
 
     /**
-     * Allow concurrent connections.
-     */
-    private bool $concurrent = false;
-
-    /**
      * Allow direct upload.
      */
     private bool $directUpload = false;
@@ -401,34 +396,6 @@ class UploaderConfig
     public function setChunkSize(int $chunkSize): self
     {
         $this->chunkSize = $chunkSize;
-
-        return $this;
-    }
-
-    /**
-     * Return true if the concurrent connections are enabled.
-     */
-    public function isConcurrentEnabled(): bool
-    {
-        return $this->concurrent;
-    }
-
-    /**
-     * Enable the concurrent connections.
-     */
-    public function enableConcurrent(): self
-    {
-        $this->concurrent = true;
-
-        return $this;
-    }
-
-    /**
-     * Disable the concurrent connections.
-     */
-    public function disableConcurrent(): self
-    {
-        $this->concurrent = false;
 
         return $this;
     }

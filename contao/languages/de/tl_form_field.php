@@ -45,10 +45,6 @@ $GLOBALS['TL_LANG']['tl_form_field']['chunkSize'] = [
     'Chunk-Grösse in Bytes',
     'Bitte geben Sie die Chunk-Grösse in Bytes ein  (1MB = 1000000 Bytes).',
 ];
-$GLOBALS['TL_LANG']['tl_form_field']['concurrent'] = [
-    'Simultanes Hochladen aktivieren',
-    'Aktivieren Sie hier den simultanen Dateiupload. Beachten Sie auch die "Maximale Anzahl an Verbindungen" Einstellungsmöglichkeit.',
-];
 $GLOBALS['TL_LANG']['tl_form_field']['allowImageResize'] = [
     'Client-seitige Bildgrößenänderung aktivieren',
     'Hier können Sie die Größenänderung des Bildes aktivieren, bevor das Bild auf den Server hochgeladen wird.',

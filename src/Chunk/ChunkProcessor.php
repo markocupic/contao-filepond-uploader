@@ -14,6 +14,7 @@ declare(strict_types=1);
 
 namespace Markocupic\ContaoFilepondUploader\Chunk;
 
+use Contao\StringUtil;
 use Contao\System;
 use Markocupic\ContaoFilepondUploader\TransferKey;
 use Markocupic\ContaoFilepondUploader\Widget\FilepondFrontendWidget;
@@ -63,7 +64,7 @@ class ChunkProcessor
             throw new \InvalidArgumentException('Offset exceeds file size');
         }
 
-        $safeFileName = $this->sanitizeFileName($fileName);
+        $safeFileName = StringUtil::sanitizeFileName($fileName);
 
         // Save the chunk file
         $chunkFile = $this->getChunkFilePath($filePondItemId, $offset);
@@ -190,18 +191,6 @@ class ChunkProcessor
         }
 
         throw new \InvalidArgumentException('Invalid chunk data format. Expected file upload array or content string');
-    }
-
-    /**
-     * Sanitizes file name from unsafe characters.
-     */
-    private function sanitizeFileName(string $fileName): string
-    {
-        // Remove path components
-        $fileName = basename($fileName);
-
-        // Replace unsafe characters
-        return preg_replace('/[^a-zA-Z0-9._-]/', '_', $fileName);
     }
 
     /**

@@ -93,7 +93,6 @@ class ConfigGeneratorTest extends ContaoTestCase
         $attributes = [
             'chunking' => true,
             'chunkSize' => 1000000,
-            'concurrent' => true,
         ];
 
         $uploaderConfig = $this->configGenerator->generateFromWidgetAttributes($attributes);
@@ -101,7 +100,6 @@ class ConfigGeneratorTest extends ContaoTestCase
         $this->assertInstanceOf(UploaderConfig::class, $uploaderConfig);
         $this->assertTrue($uploaderConfig->isChunkingEnabled());
         $this->assertSame(1000000, $uploaderConfig->getChunkSize());
-        $this->assertTrue($uploaderConfig->isConcurrentEnabled());
     }
 
     public function testGenerateFromWidgetAttributesWithCustomUploadFolder(): void

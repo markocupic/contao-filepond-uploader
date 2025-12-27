@@ -92,7 +92,6 @@ readonly class ConfigGenerator
         if ($config->isChunkingEnabled()) {
             $opt['chunking'] = true;
             $opt['chunkSize'] = $config->getChunkSize();
-            $opt['concurrent'] = $config->isConcurrentEnabled();
         }
 
         // Get labels
@@ -123,7 +122,6 @@ readonly class ConfigGenerator
             'maxConnections' => static fn ($v) => $config->setMaxConnections($v),
             'chunking' => static fn ($v) => $v ? $config->enableChunking() : $config->disableChunking(),
             'chunkSize' => static fn ($v) => $config->setChunkSize((int) $v),
-            'concurrent' => static fn ($v) => $v ? $config->enableConcurrent() : $config->disableConcurrent(),
             'directUpload' => static fn ($v) => $v ? $config->enableDirectUpload() : $config->disableDirectUpload(),
             'storeFile' => static fn ($v) => $v ? $config->enableStoreFile() : $config->disableStoreFile(),
             'doNotOverwrite' => static fn ($v) => $v ? $config->enableDoNotOverwrite() : $config->disableDoNotOverwrite(),

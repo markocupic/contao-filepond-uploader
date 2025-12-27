@@ -28,7 +28,7 @@ $GLOBALS['TL_DCA']['tl_form_field']['palettes']['filepondUploader'] = '
 /**
  * Subpalettes
  */
-$GLOBALS['TL_DCA']['tl_form_field']['subpalettes']['chunking'] = 'chunkSize,concurrent';
+$GLOBALS['TL_DCA']['tl_form_field']['subpalettes']['chunking'] = 'chunkSize';
 $GLOBALS['TL_DCA']['tl_form_field']['subpalettes']['allowImageResize'] = 'imageResizeTargetWidth,imageResizeTargetHeight,imageResizeMode,imageResizeUpscale';
 
 PaletteManipulator::create()
@@ -65,13 +65,6 @@ $GLOBALS['TL_DCA']['tl_form_field']['fields']['chunkSize'] = [
     'inputType' => 'text',
     'eval'      => ['rgxp' => 'digit', 'tl_class' => 'w50'],
     'sql'       => "varchar(16) NOT NULL default ''",
-];
-
-$GLOBALS['TL_DCA']['tl_form_field']['fields']['concurrent'] = [
-    'exclude'   => true,
-    'inputType' => 'checkbox',
-    'eval'      => ['tl_class' => 'w50 m12'],
-    'sql'       => ['type' => 'boolean', 'default' => false],
 ];
 
 $GLOBALS['TL_DCA']['tl_form_field']['fields']['addToDbafs'] = [

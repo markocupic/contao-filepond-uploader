@@ -161,7 +161,7 @@ class ContaoFilepondPlugin {
         this.#options = {
             // Add translations
             ...this.jsConfig.translations,
-            maxParallelUploads: this.jsConfig.maxConnections,
+            maxParallelUploads: this.jsConfig.maxConnections < 1 ? 1 : this.jsConfig.maxConnections,
             instantUpload: true,
             allowMultiple: this.#allowMultiple,
             allowFileTypeValidation: true,

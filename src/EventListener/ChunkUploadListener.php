@@ -40,6 +40,8 @@ readonly class ChunkUploadListener
 
         if ($arrUploadResult['completed'] && $arrUploadResult['success']) {
             if ($config->isDirectUploadEnabled()) {
+                // Returns the UUID of the uploaded file if addToDbafs is set to true,
+                // otherwise the relative path to the uploaded file.
                 $newPath = $this->uploader->storeFile($config, $arrUploadResult['filePath']);
                 $arrUploadResult['filePath'] = Validator::isBinaryUuid($newPath) ? StringUtil::binToUuid($newPath) : $newPath;
                 $arrUploadResult['directUpload'] = true;

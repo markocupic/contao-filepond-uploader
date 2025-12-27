@@ -55,6 +55,8 @@ readonly class Uploader
 
         // Validate and move the file immediately
         if ($config->isDirectUploadEnabled()) {
+            // Returns the UUID of the uploaded file if addToDbafs is set to true,
+            // otherwise the relative path to the uploaded file.
             $filePath = $this->storeFile($config, $filePath);
         }
 
