@@ -5,7 +5,7 @@ declare(strict_types=1);
 /*
  * This file is part of Contao Filepond Uploader.
  *
- * (c) Marko Cupic 2024 <m.cupic@gmx.ch>
+ * (c) Marko Cupic <m.cupic@gmx.ch>
  * @license GPL-3.0-or-later
  * For the full copyright and license information,
  * please view the LICENSE file that was distributed with this source code.
@@ -14,120 +14,92 @@ declare(strict_types=1);
 
 namespace Markocupic\ContaoFilepondUploader\RequestHandler;
 
-use Contao\CoreBundle\Monolog\ContaoContext;
 use Contao\CoreBundle\Routing\ScopeMatcher;
-use Markocupic\ContaoFilepondUploader\Widget\FrontendWidget;
+use Markocupic\ContaoFilepondUploader\Event\ChunkUploadEvent;
+use Markocupic\ContaoFilepondUploader\Event\FileUploadEvent;
+use Markocupic\ContaoFilepondUploader\Widget\FilepondFrontendWidget;
 use Psr\Log\LoggerInterface;
-use Psr\Log\LogLevel;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
 #[Autoconfigure(public: true)]
-class FrontendHandler
+readonly class FrontendHandler
 {
-    use HandlerTrait;
+    private const ACTIONS = [
+        'FILEPOND_UPLOAD' => 'filepond_upload',
+        'FILEPOND_UPLOAD_CHUNK' => 'filepond_upload_chunk',
+    ];
 
-    /**
-     * FrontendHandler constructor.
-     */
     public function __construct(
-        private readonly EventDispatcherInterface $eventDispatcher,
-        private readonly LoggerInterface $logger,
-        private readonly ScopeMatcher $scopeMatcher,
-        #[Autowire('%kernel.project_dir%')]
-        private readonly string $projectDir,
+        private EventDispatcherInterface $eventDispatcher,
+        private LoggerInterface|null $contaoErrorLogger,
+        private ScopeMatcher $scopeMatcher,
     ) {
     }
 
     /**
      * Handle widget initialization request.
      */
-    public function handleWidgetInitRequest(Request $request, FrontendWidget $widget): Response|null
+    public function handleWidgetInitRequest(Request $request, FilepondFrontendWidget $widget): Response|null
     {
-        if (
-            !$request->isXmlHttpRequest()
-            || empty($request->headers->get('filePondItemId'))
-            || $widget->name !== $request->headers->get('name')
-            || $request->attributes->get('filepond_ajax')
-        ) {
+        if ($widget->name !== $request->headers->get('name')) {
             return null;
         }
 
-        // Add the item id to the request attributes
-        $request->attributes->set('filePondItemId', $request->headers->get('filePondItemId'));
+        if (!$request->isXmlHttpRequest()) {
+            return null;
+        }
+
+        if ($request->attributes->get('filepond_ajax')) {
+            return null;
+        }
+
+        try {
+            $this->validateRequest($request);
+
+            $action = $this->getAction($request);
+            if ($action === self::ACTIONS['FILEPOND_UPLOAD_CHUNK']) {
+                // Do some additional validation for chunk requests
+                $this->validateChunkRequest($request);
+            }
+        } catch (\Exception $e) {
+            $this->contaoErrorLogger?->error($e->getMessage());
+
+            return new Response('Bad Request', 400);
+        }
 
         // Avoid circular reference
         $request->attributes->set('filepond_ajax', true);
-
-        try {
-            $response = $this->dispatchRequest($request, $widget);
-        } catch (\Exception $e) {
-            $caller = $e->getTrace()[1];
-            $func = $caller['class'].'::'.$caller['function'];
-
-            $this->logger->log(
-                LogLevel::ERROR,
-                $e->getMessage(),
-                ['contao' => new ContaoContext($func, ContaoContext::ERROR)],
-            );
-
-            $response = new Response('Bad Request', 400);
-        }
-
-        return $response;
-    }
-
-    /**
-     * Handle upload request.
-     *
-     * @throw \RuntimeException
-     */
-    public function handleUploadRequest(Request $request, FrontendWidget $widget): JsonResponse
-    {
-        $this->validateRequest($request);
 
         return $this->getUploadResponse($this->eventDispatcher, $request, $widget);
     }
 
     /**
-     * Handle reload request.
-     *
-     * @throw \RuntimeException
+     * Get the file upload response.
      */
-    public function handleReloadRequest(Request $request, FrontendWidget $widget): Response
+    protected function getUploadResponse(EventDispatcherInterface $eventDispatcher, Request $request, FilepondFrontendWidget $widget): JsonResponse
     {
-        $this->validateRequest($request);
+        $action = $this->getAction($request);
 
-        // Set the value from request
-        $widget->value = $this->parseValue($request->request->get('value'), $this->projectDir);
+        if ($action === self::ACTIONS['FILEPOND_UPLOAD_CHUNK']) {
+            $event = new ChunkUploadEvent($request, new JsonResponse(), $widget);
+            $eventDispatcher->dispatch($event);
 
-        return $this->getReloadResponse($this->eventDispatcher, $request, $widget);
-    }
-
-    /**
-     * Dispatch the request.
-     *
-     * @return JsonResponse|null
-     */
-    private function dispatchRequest(Request $request, FrontendWidget $widget): Response|null
-    {
-        $response = null;
-
-        // File upload
-        if ('filepond_upload' === $request->request->get('action')) {
-            $response = $this->handleUploadRequest($request, $widget);
+            return $event->getResponse();
         }
 
-        // Widget reload
-        if ('fineuploader_reload' === $request->request->get('action')) {
-            // $response = $this->handleReloadRequest($request, $widget);
+        if ($action === self::ACTIONS['FILEPOND_UPLOAD']) {
+            $event = new FileUploadEvent($request, new JsonResponse(), $widget);
+            $eventDispatcher->dispatch($event);
+
+            return $event->getResponse();
         }
 
-        return $response;
+        throw new \RuntimeException('Invalid action submitted!');
     }
 
     /**
@@ -138,5 +110,48 @@ class FrontendHandler
         if (!$this->scopeMatcher->isFrontendRequest($request)) {
             throw new \RuntimeException('This method can be executed only in the frontend scope');
         }
+
+        if (!$request->headers->has('filePondItemId')) {
+            throw new BadRequestHttpException('Required header "filePondItemId" is missing.');
+        }
+
+        if (!$request->isMethod(Request::METHOD_POST)) {
+            throw new BadRequestHttpException('Request method must POST.');
+        }
+
+        $action = $this->getAction($request);
+
+        if (!\in_array($action, self::ACTIONS, true)) {
+            throw new BadRequestHttpException('Invalid $_POST["action"] value submitted!');
+        }
+    }
+
+    /**
+     * Validate the request.
+     */
+    private function validateChunkRequest(Request $request): void
+    {
+        $action = $this->getAction($request);
+
+        if (self::ACTIONS['FILEPOND_UPLOAD_CHUNK'] !== $action) {
+            throw new BadRequestHttpException('Invalid $_POST["action"] value submitted!');
+        }
+
+        $post = ['fileName', 'offset', 'totalSize'];
+
+        foreach ($post as $key) {
+            if (!$request->request->has($key)) {
+                throw new BadRequestHttpException('Missing POST parameter: '.$key);
+            }
+        }
+
+        if (empty($_FILES['chunk'])) {
+            throw new BadRequestHttpException('Missing FILES parameter: "chunk"');
+        }
+    }
+
+    private function getAction(Request $request): string
+    {
+        return $request->request->get('action');
     }
 }

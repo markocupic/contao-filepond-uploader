@@ -5,7 +5,7 @@ declare(strict_types=1);
 /*
  * This file is part of Contao Filepond Uploader.
  *
- * (c) Marko Cupic 2024 <m.cupic@gmx.ch>
+ * (c) Marko Cupic <m.cupic@gmx.ch>
  * @license GPL-3.0-or-later
  * For the full copyright and license information,
  * please view the LICENSE file that was distributed with this source code.
@@ -16,6 +16,11 @@ $GLOBALS['TL_LANG']['FFL']['filepondUploader'] = [
     'Filepond uploader',
     'Drag and drop Dateiuploader basierend auf dem Filepond Uploader von PQINA.',
 ];
+
+/*
+ * Palettes
+ */
+$GLOBALS['TL_LANG']['tl_form_field']['image_config_legend'] = 'Einstellungen für Bilduploads';
 
 /*
  * Fields
@@ -32,13 +37,13 @@ $GLOBALS['TL_LANG']['tl_form_field']['addToDbafs'] = [
     'Zum DBAFS hinzufügen',
     'Die Datei zum datenbankunterstützten Dateisystem hinzufügen. Bitte beachten: In diesem Fall gibt das Formularfeld eine UUID statt dem Pfad zurück.',
 ];
+$GLOBALS['TL_LANG']['tl_form_field']['directUpload'] = [
+    'Dateien direkt hochladen',
+    'Dateien direkt und ohne das Formular abzusenden ins Zielverzeichnis laden.',
+];
 $GLOBALS['TL_LANG']['tl_form_field']['chunkSize'] = [
     'Chunk-Grösse in Bytes',
     'Bitte geben Sie die Chunk-Grösse in Bytes ein  (1MB = 1000000 Bytes).',
-];
-$GLOBALS['TL_LANG']['tl_form_field']['concurrent'] = [
-    'Simultanes Hochladen aktivieren',
-    'Aktivieren Sie hier den simultanen Dateiupload. Beachten Sie auch die "Maximale Anzahl an Verbindungen" Einstellungsmöglichkeit.',
 ];
 $GLOBALS['TL_LANG']['tl_form_field']['allowImageResize'] = [
     'Client-seitige Bildgrößenänderung aktivieren',

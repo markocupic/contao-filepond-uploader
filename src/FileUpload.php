@@ -5,7 +5,7 @@ declare(strict_types=1);
 /*
  * This file is part of Contao Filepond Uploader.
  *
- * (c) Marko Cupic 2024 <m.cupic@gmx.ch>
+ * (c) Marko Cupic <m.cupic@gmx.ch>
  * @license GPL-3.0-or-later
  * For the full copyright and license information,
  * please view the LICENSE file that was distributed with this source code.
@@ -18,6 +18,7 @@ use Contao\Config;
 use Contao\Message;
 use Contao\StringUtil;
 use Contao\System;
+use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\Finder\SplFileInfo;
 
@@ -44,18 +45,16 @@ class FileUpload extends \Contao\FileUpload
     /**
      * Temporary store target from uploadTo() to make it available to getFilesFromGlobal().
      */
-    private string $target;
+    private string $target = '';
 
-    public function __construct(string $name)
+    public function __construct(string $name, array $arrConfiguration)
     {
         parent::__construct();
 
         $this->setName($name);
 
-        $this->extensions = StringUtil::trimsplit(',', strtolower(Config::get('uploadTypes')));
-        $this->maxFileSize = (int) Config::get('maxFileSize') ?? 0;
-        $this->imageWidth = (int) Config::get('imageWidth') ?? 0;
-        $this->imageHeight = (int) Config::get('imageHeight') ?? 0;
+        $this->extensions = StringUtil::trimsplit(',', strtolower($arrConfiguration['extensions'] ?? Config::get('uploadTypes')));
+        $this->maxFileSize = (int) $arrConfiguration['maxlength'] ?? 0;
         $this->gdMaxImgWidth = (int) Config::get('gdMaxImgWidth') ?? 0;
         $this->gdMaxImgHeight = (int) Config::get('gdMaxImgHeight') ?? 0;
     }
@@ -80,7 +79,7 @@ class FileUpload extends \Contao\FileUpload
     public function getTransferKey(): string
     {
         if (empty($this->transferKey)) {
-            $this->transferKey = uniqid('filepond_');
+            $this->transferKey = System::getContainer()->get('markocupic_contao_filepond_uploader.transfer_key')->generate();
         }
 
         return $this->transferKey;
@@ -177,22 +176,28 @@ class FileUpload extends \Contao\FileUpload
         return $this;
     }
 
-    public function uploadTo($target): array
+    public function uploadTo($strTarget): array
     {
-        $this->target = $target;
+        // Set the temp target folder (system/tmp/...)
+        $this->target = $strTarget;
 
-        // Preserve the configuration
+        // Temporary override the configuration
         $uploadTypes = Config::get('uploadTypes');
         Config::set('uploadTypes', implode(',', $this->extensions));
 
-        $filesizeLabel = $GLOBALS['TL_LANG']['ERR']['filesize'];
+        $maxFileSize = Config::get('maxFileSize');
+        Config::set('maxFileSize', $this->maxFileSize);
 
-        // Perform upload
-        $result = parent::uploadTo($target);
-
-        // Restore the configuration
-        Config::set('uploadTypes', $uploadTypes);
-        $GLOBALS['TL_LANG']['ERR']['filesize'] = $filesizeLabel;
+        try {
+            // Perform the file upload
+            $result = parent::uploadTo($strTarget);
+        } catch (\Exception $e) {
+            throw $e;
+        } finally {
+            // Restore the configuration
+            Config::set('uploadTypes', $uploadTypes);
+            Config::set('maxFileSize', $maxFileSize);
+        }
 
         return $result;
     }
@@ -212,7 +217,7 @@ class FileUpload extends \Contao\FileUpload
         $pathinfo = pathinfo($uploadedFile);
         $name = $pathinfo['filename'];
 
-        /** @var array<SplFileInfo> $files */
+        /** @var Finder<SplFileInfo> $files */
         $files = Finder::create()
             ->in($projectDir.'/'.$uploadFolder)
             ->files()
@@ -221,7 +226,7 @@ class FileUpload extends \Contao\FileUpload
 
         foreach ($files as $file) {
             $fileName = $file->getFilename();
-
+            dump($fileName);
             if (preg_match('/__[0-9]+\.'.preg_quote($pathinfo['extension'], '/').'$/', $fileName)) {
                 $fileName = str_replace('.'.$pathinfo['extension'], '', $fileName);
                 $value = (int) substr($fileName, strrpos($fileName, '_') + 1);
@@ -246,7 +251,7 @@ class FileUpload extends \Contao\FileUpload
             }
         }
 
-        // Validate minimum file size and skip from parent call
+        // Validate the minimum file size and skip from the parent call
         if ($this->minFileSize > 0) {
             $minlength_kb_readable = static::getReadableSize($this->minFileSize);
 
@@ -260,21 +265,5 @@ class FileUpload extends \Contao\FileUpload
         }
 
         return $files;
-    }
-
-    protected function resizeUploadedImage($strImage): bool
-    {
-        // $imageWidth = Config::get('imageWidth');
-        // $imageHeight = Config::get('imageHeight');
-        // $gdMaxImgWidth = Config::get('gdMaxImgWidth');
-        // $gdMaxImgHeight = Config::get('gdMaxImgHeight');
-
-        // Override temporarily the Contao local config image width configuration.
-        // Config::set('imageWidth', $this->imageWidth);
-        // Config::set('imageHeight', $this->imageHeight);
-        // Config::set('gdMaxImgWidth', $this->gdMaxImgWidth);
-        // Config::set('gdMaxImgHeight', $this->gdMaxImgHeight);
-
-        return parent::resizeUploadedImage($strImage);
     }
 }

@@ -24,7 +24,21 @@ jobs:
 
             -   name: Run the CS fixer
                 run: composer cs-fixer
+    phpstan:
+        name: Phpstan
+        runs-on: ubuntu-latest
+        steps:
+            -   name: Setup PHP
+                uses: shivammathur/setup-php@v2
 
+            -   name: Checkout
+                uses: actions/checkout@v2
+
+            -   name: Install phpstan
+                run: cd tools/phpstan && composer update --no-interaction --no-suggest
+
+            -   name: Run phpstan
+                run: composer phpstan
     tests:
         name: PHP ${{ matrix.php }}
         runs-on: ubuntu-latest

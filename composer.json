@@ -23,11 +23,14 @@
     },
     "require": {
         "php": "^8.2",
-        "contao/core-bundle": "^4.13 || ^5.0"
+        "contao/core-bundle": "^5.3"
     },
     "require-dev": {
         "contao/manager-plugin": "^2.12",
-        "contao/easy-coding-standard": "^6.0"
+        "contao/easy-coding-standard": "^6.0",
+        "phpstan/phpstan": "^2.1",
+        "phpunit/phpunit": "^9.5",
+        "contao/test-case": "^5.3"
     },
     "autoload": {
         "psr-4": {
@@ -39,7 +42,8 @@
             "contao-components/installer": false,
             "contao/manager-plugin": false,
             "contao-community-alliance/composer-plugin": true,
-            "dealerdirect/phpcodesniffer-composer-installer": true
+            "dealerdirect/phpcodesniffer-composer-installer": true,
+            "php-http/discovery": true
         }
     },
     "extra": {
@@ -47,6 +51,7 @@
     },
     "scripts": {
         "cs-fixer": "@php tools/ecs/vendor/bin/ecs check config/ contao/ src/ templates/ tests/ --config tools/ecs/config/default.php --fix --ansi",
-        "unit-tests": "@php tools/phpunit/vendor/bin/phpunit -c tools/phpunit/phpunit.xml.dist"
+        "unit-tests": "@php tools/phpunit/vendor/bin/phpunit -c tools/phpunit/phpunit.xml.dist",
+        "phpstan": "@php tools/phpstan/vendor/bin/phpstan analyse src/ --level 2"
     }
 }

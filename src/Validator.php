@@ -5,7 +5,7 @@ declare(strict_types=1);
 /*
  * This file is part of Contao Filepond Uploader.
  *
- * (c) Marko Cupic 2024 <m.cupic@gmx.ch>
+ * (c) Marko Cupic <m.cupic@gmx.ch>
  * @license GPL-3.0-or-later
  * For the full copyright and license information,
  * please view the LICENSE file that was distributed with this source code.
@@ -14,39 +14,40 @@ declare(strict_types=1);
 
 namespace Markocupic\ContaoFilepondUploader;
 
-use Markocupic\ContaoFilepondUploader\Widget\BaseWidget;
+use Markocupic\ContaoFilepondUploader\Widget\FilepondFrontendWidget;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
 #[Autoconfigure(public: true)]
-class Validator
+readonly class Validator
 {
     public function __construct(
-        private readonly Uploader $uploader,
+        private Uploader $uploader,
     ) {
     }
 
     /**
      * Validate the widget input.
      */
-    public function validateInput(BaseWidget $widget, array|string $input): array|string
+    public function validateInput(FilepondFrontendWidget $widget, array|string|null $varInput): array|string
     {
         // No input
-        if (empty($input)) {
+        if (empty($varInput)) {
             return $this->validateEmptyValue($widget);
         }
 
-        // If "multiple" is set the input type "array", otherwise "string".
-        if (\is_array($input)) {
-            return $this->validateMultipleFiles($widget, array_filter($input));
+        // If the "multiple" attribute is set,
+        // FilePond submits the input as "array", otherwise as "string".
+        if (\is_array($varInput)) {
+            return $this->validateMultipleFiles($widget, array_filter($varInput));
         }
 
-        return $this->validateSingleFile($widget, $input);
+        return $this->validateSingleFile($widget, $varInput);
     }
 
     /**
      * Validate an empty value.
      */
-    private function validateEmptyValue(BaseWidget $widget): array|string
+    private function validateEmptyValue(FilepondFrontendWidget $widget): array|string
     {
         // Add an error if the field is mandatory
         if ($widget->mandatory) {
@@ -57,39 +58,49 @@ class Validator
             }
         }
 
-        return $widget->multiple ? [] : '';
+        $config = $widget->getUploaderConfig();
+
+        return $config->isMultiple() ? [] : '';
     }
 
     /**
      * Validate the single file.
      */
-    private function validateSingleFile(BaseWidget $widget, string $input): string
+    private function validateSingleFile(FilepondFrontendWidget $widget, string $varInput): string
     {
         try {
-            return $this->uploader->storeFile($widget->getUploaderConfig(), $input);
+            // Returns the UUID of the uploaded file if addToDbafs is set to true,
+            // otherwise the relative path to the uploaded file.
+            return $this->uploader->storeFile($widget->getUploaderConfig(), $varInput);
         } catch (\Exception $e) {
             $widget->addError($GLOBALS['TL_LANG']['ERR']['emptyUpload']);
         }
 
-        return $input;
+        return $varInput;
     }
 
     /**
-     * Validate the multiple files.
+     * Validate multiple files.
+     *
+     * @return array<string>
      */
-    private function validateMultipleFiles(BaseWidget $widget, array $inputs): array
+    private function validateMultipleFiles(FilepondFrontendWidget $widget, array $varInputs): array
     {
         $config = $widget->getUploaderConfig();
 
         // Limit the number of uploads
         if ($config->getFileLimit() > 0) {
-            $inputs = \array_slice($inputs, 0, $config->getFileLimit());
+            $varInputs = \array_slice($varInputs, 0, $config->getFileLimit());
         }
 
+        $inputs = [];
+
         // Store the files
-        foreach ($inputs as $k => $v) {
+        foreach ($varInputs as $k => $splFileInfo) {
             try {
-                $inputs[$k] = $this->uploader->storeFile($config, $v);
+                // Returns the UUID of the uploaded file if addToDbafs is set to true,
+                // otherwise the relative path to the uploaded file.
+                $inputs[$k] = $this->uploader->storeFile($config, $splFileInfo);
             } catch (\Exception $e) {
                 $widget->addError($GLOBALS['TL_LANG']['ERR']['emptyUpload']);
             }

@@ -14,17 +14,17 @@ declare(strict_types=1);
 
 namespace Markocupic\ContaoFilepondUploader\Event;
 
-use Markocupic\ContaoFilepondUploader\Widget\BaseWidget;
+use Markocupic\ContaoFilepondUploader\Widget\FilepondFrontendWidget;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
 use Symfony\Contracts\EventDispatcher\Event;
 
 class FileUploadEvent extends Event
 {
     public function __construct(
         private Request $request,
-        private Response $response,
-        private BaseWidget $widget,
+        private JsonResponse $response,
+        private FilepondFrontendWidget $widget,
     ) {
     }
 
@@ -38,22 +38,22 @@ class FileUploadEvent extends Event
         $this->request = $request;
     }
 
-    public function getResponse(): Response
+    public function getResponse(): JsonResponse
     {
         return $this->response;
     }
 
-    public function setResponse(Response $response): void
+    public function setResponse(JsonResponse $response): void
     {
         $this->response = $response;
     }
 
-    public function getWidget(): BaseWidget
+    public function getWidget(): FilepondFrontendWidget
     {
         return $this->widget;
     }
 
-    public function setWidget(BaseWidget $widget): void
+    public function setWidget(FilepondFrontendWidget $widget): void
     {
         $this->widget = $widget;
     }

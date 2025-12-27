@@ -161,7 +161,7 @@ class ContaoFilepondPlugin {
         this.#options = {
             // Add translations
             ...this.jsConfig.translations,
-            maxParallelUploads: this.jsConfig.maxConnections < 1 ? 1 : this.jsConfig.maxConnections,
+            maxParallelUploads: this.jsConfig.maxConnections,
             instantUpload: true,
             allowMultiple: this.#allowMultiple,
             allowFileTypeValidation: true,
@@ -181,154 +181,72 @@ class ContaoFilepondPlugin {
             },
 
             server: {
-                process: (fieldName, file, metadata, load, error, progress, abort) => {
-
+                process: (fieldName, file, metadata, load, error, progress, abort, transfer, options) => {
+                    // Get the item id from metadata (added in onaddfile())
                     const itemId = metadata.itemId;
 
-                    // Remove custom error boxes
+                    // Remove the injected custom error box if there is one...
                     const errBoxes = document.querySelectorAll('#filepond--item-' + itemId + ' .filepond--contao-error');
-
                     for (const errBox of errBoxes) {
                         errBox.remove();
                     }
 
-                    const doChunkedUpload = true === this.jsConfig.chunking && this.jsConfig.chunkSize > 0 && file.size > this.jsConfig.chunkSize;
+                    // fieldName is the name of the input field
+                    // file is the actual file object to send
+                    const formData = new FormData();
+                    formData.append(fieldName, file, file.name);
+                    formData.append('REQUEST_TOKEN', this.jsConfig.csrfToken);
+                    formData.append('action', 'filepond_upload');
 
-                    // ---------------------------------------------------------
-                    // CASE 1: Normal upload (file smaller than chunk size)
-                    // ---------------------------------------------------------
-                    if (!doChunkedUpload) {
+                    const request = new XMLHttpRequest();
 
-                        const formData = new FormData();
-                        formData.append(fieldName, file, file.name);
-                        formData.append('REQUEST_TOKEN', this.jsConfig.csrfToken);
-                        formData.append('action', 'filepond_upload');
-                        formData.append('filePondItemId', itemId);
+                    // Open post request
+                    request.open('POST', window.location.href);
 
-                        const request = new XMLHttpRequest();
-                        request.open('POST', window.location.href);
+                    // Set headers
+                    request.setRequestHeader('Accept', 'application/json');
+                    request.setRequestHeader('name', this.name);
+                    request.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+                    request.setRequestHeader('filePondItemId', itemId);
 
-                        request.setRequestHeader('Accept', 'application/json');
-                        request.setRequestHeader('name', this.name);
-                        request.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-                        request.setRequestHeader('filePondItemId', itemId);
-
-                        request.upload.onprogress = (e) => {
-                            progress(e.lengthComputable, e.loaded, e.total);
-                        };
-
-                        request.onload = () => {
-                            if (request.status >= 200 && request.status < 300) {
-                                const json = JSON.parse(request.response);
-
-                                if (json.success === true) {
-                                    if (true === json.directUpload ?? false) {
-                                        load(''); // Prevent filepond uploading the file twice.
-                                    } else {
-                                        load(json.transferKey);
-                                    }
-                                } else {
-                                    error(json.error || 'Upload error');
-                                }
-                            } else {
-                                error('Upload error');
-                            }
-                        };
-
-                        request.send(formData);
-
-                        return {
-                            abort: () => {
-                                request.abort();
-                                abort();
-                            }
-                        };
-                    }
-
-                    // ---------------------------------------------------------
-                    // CASE 2: Chunk upload (file larger than chunk size)
-                    // ---------------------------------------------------------
-
-                    let offset = 0;
-                    let aborted = false;
-                    let activeRequest = null;
-                    let chunkSize = this.jsConfig.chunkSize;
-
-                    const uploadChunk = () => {
-                        if (aborted) {
-                            return;
-                        }
-
-                        const chunk = file.slice(offset, offset + chunkSize);
-
-                        const formData = new FormData();
-                        formData.append('chunk', chunk);
-                        formData.append('fileName', file.name);
-                        formData.append('offset', offset);
-                        formData.append('totalSize', file.size);
-                        formData.append('REQUEST_TOKEN', this.jsConfig.csrfToken);
-                        formData.append('action', 'filepond_upload_chunk');
-
-                        const request = new XMLHttpRequest();
-                        activeRequest = request;
-
-                        request.open('POST', window.location.href);
-
-                        request.setRequestHeader('Accept', 'application/json');
-                        request.setRequestHeader('name', this.name);
-                        request.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-                        request.setRequestHeader('filePondItemId', itemId);
-
-                        request.upload.onprogress = (e) => {
-                            const loaded = offset + e.loaded;
-                            progress(true, loaded, file.size);
-                        };
-
-                        request.onload = () => {
-                            if (request.status >= 200 && request.status < 300) {
-                                const json = JSON.parse(request.response);
-
-                                if (!json.success) {
-                                    error(json.error || 'Chunk upload failed');
-                                    return;
-                                }
-
-                                offset += chunk.size;
-
-                                if (offset < file.size) {
-                                    uploadChunk();
-                                } else {
-                                    // All chunks uploaded:
-                                    // Append the transferkey to the filepond file input field
-                                    if (true === json.directUpload ?? false) {
-                                        load(''); // Prevent filepond uploading the file twice.
-                                    } else {
-                                        load(json.transferKey);
-                                    }
-                                }
-
-                            } else {
-                                error('Upload error');
-                            }
-                        };
-
-                        request.onerror = () => {
-                            error('Network error');
-                        };
-
-                        request.send(formData);
+                    // Should call the progress method to update the progress to 100% before calling load
+                    // Setting computable to false switches the loading indicator to infinite mode
+                    request.upload.onprogress = (e) => {
+                        progress(e.lengthComputable, e.loaded, e.total);
                     };
 
-                    uploadChunk(this.jsConfig.chunkSize);
+                    // Should call the load method when done and pass the returned server file id
+                    // this server file id is then used later on when reverting or restoring a file
+                    // so your server knows which file to return without exposing that info to the client
+                    request.onload = function () {
+                        if (request.status >= 200 && request.status < 300) {
+                            // the load method accepts either a string (id) or an object
+                            const jsonResponse = JSON.parse(request.response);
 
+                            if (jsonResponse.success === true) {
+                                load(jsonResponse.transferKey);
+                            } else if (jsonResponse.error) {
+                                error(jsonResponse.error)
+                            } else {
+                                error('There has been an error!');
+                            }
+                        } else {
+                            // Can call the error method if something is wrong, should exit after
+                            error('There has been an error!');
+                        }
+                    };
+
+                    request.send(formData);
+
+                    // Should expose an abort method so the request can be cancelled
                     return {
                         abort: () => {
-                            aborted = true;
-                            if (activeRequest) {
-                                activeRequest.abort();
-                            }
+                            // This function is entered if the user has tapped the cancel button
+                            request.abort();
+
+                            // Let FilePond know the request has been cancelled
                             abort();
-                        }
+                        },
                     };
                 },
 

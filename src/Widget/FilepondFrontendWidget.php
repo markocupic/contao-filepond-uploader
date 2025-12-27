@@ -5,7 +5,7 @@ declare(strict_types=1);
 /*
  * This file is part of Contao Filepond Uploader.
  *
- * (c) Marko Cupic 2024 <m.cupic@gmx.ch>
+ * (c) Marko Cupic <m.cupic@gmx.ch>
  * @license GPL-3.0-or-later
  * For the full copyright and license information,
  * please view the LICENSE file that was distributed with this source code.
@@ -14,64 +14,67 @@ declare(strict_types=1);
 
 namespace Markocupic\ContaoFilepondUploader\Widget;
 
+use Contao\Config;
 use Contao\CoreBundle\Exception\ResponseException;
-use Contao\FormFieldModel;
 use Contao\System;
+use Contao\UploadableWidgetInterface;
+use Contao\Widget;
 use Markocupic\ContaoFilepondUploader\AssetsManager;
 use Markocupic\ContaoFilepondUploader\ConfigGenerator;
 use Markocupic\ContaoFilepondUploader\RequestHandler\FrontendHandler;
 use Markocupic\ContaoFilepondUploader\UploaderConfig;
+use Markocupic\ContaoFilepondUploader\Validator;
 use Markocupic\ContaoFilepondUploader\WidgetHelper;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\Request;
 
-class FrontendWidget extends BaseWidget
+class FilepondFrontendWidget extends Widget implements UploadableWidgetInterface
 {
     public const TYPE = 'filepondUploader';
 
-    /**
-     * Template.
-     *
-     * @var string
-     */
-    protected $strTemplate = 'filepond_uploader_frontend';
-
-    /**
-     * The CSS class prefix.
-     *
-     * @var string
-     */
-    protected $strPrefix = 'widget widget-filepond-uploader';
-
     protected ContainerInterface $container;
 
-    /**
-     * Initialize the object.
-     *
-     * @param array|null $attributes
-     */
-    public function __construct($attributes = null)
+    protected UploaderConfig|null $uploaderConfig = null;
+
+    protected int $uploaderLimit = 1;
+
+    protected array $jsConfig = [];
+
+    protected $strTemplate = 'filepond_uploader_frontend';
+
+    protected $strPrefix = 'widget widget-filepond-uploader';
+
+    public function __construct(array|null $attributes = null)
     {
-        if (!empty($attributes['id']) && null !== ($formFieldModel = FormFieldModel::findById($attributes['id']))) {
-            $this->arrConfiguration = array_merge($this->arrConfiguration, $formFieldModel->row());
+        // First run the parent constructor, then add our custom attributes
+        parent::__construct($attributes);
+
+        // Set defaults
+        $this->arrConfiguration['maxlength'] = Config::get('maxFileSize') ?? 0; // max file size in bytes
+        $this->arrConfiguration['minlength'] = 0; // min file size in bytes
+        $this->arrConfiguration['maxImageWidth'] = Config::get('imageWidth') ?? 0; // max image width in pixels
+        $this->arrConfiguration['maxImageHeight'] = Config::get('imageHeight') ?? 0; // max image height in pixels
+
+        if (!empty($attributes)) {
+            // Override defaults with values form field config.
+            $attr = $attributes;
+            $row = [];
+            $row['maxlength'] = !empty($attr['maxlength']) ? $attr['maxlength'] : $this->arrConfiguration['maxlength']; // max file size in bytes
+            $row['minlength'] = !empty($attr['minlength']) ? $attr['minlength'] : $this->arrConfiguration['minlength']; // min file size in bytes
+            $row['maxImageWidth'] = !empty($attr['maxImageWidth']) ? $attr['maxImageWidth'] : $this->arrConfiguration['maxImageWidth']; // max image width in pixels
+            $row['maxImageHeight'] = !empty($attr['maxImageHeight']) ? $attr['maxImageHeight'] : $this->arrConfiguration['maxImageHeight']; // max image height in pixels
+
+            $this->arrConfiguration = array_merge($this->arrConfiguration, $row);
         }
 
         $this->blnSubmitInput = true;
-
         $this->container = System::getContainer();
-
-        parent::__construct($attributes);
-
-        $request = $this->getRequest();
 
         // Set the default attributes
         $this->setDefaultAttributes();
-        $this->includeAssets('frontend' === $request->attributes->get('_scope'));
+        $this->includeAssets();
 
-        // Clean the chunks session when the widget is initialized in a non-ajax request
-        if (!$request->isXmlHttpRequest()) {
-            // $this->container->get('terminal42_fineuploader.chunk_uploader')->clearSession($this);
-        }
+        $request = $this->getRequest();
 
         if ($request->isXmlHttpRequest()) {
             /** @var FrontendHandler $frontendHandler */
@@ -82,15 +85,6 @@ class FrontendWidget extends BaseWidget
                 throw new ResponseException($response);
             }
         }
-
-        // $response = $this->container->get('terminal42_fineuploader.request.frontend_handler')->handleWidgetInitRequest(
-        // $this->container->get('request_stack')->getCurrentRequest(),
-        // $this
-        // );
-
-        // if (null !== $response) {
-        // throw new ResponseException($response);
-        // }
     }
 
     /**
@@ -111,8 +105,8 @@ class FrontendWidget extends BaseWidget
                 break;
 
             case 'maxConnections':
-            case 'maxWidth':
-            case 'maxHeight':
+            case 'maxImageWidth':
+            case 'maxImageHeight':
             case 'imageResizeTargetWidth':
             case 'imageResizeTargetHeight':
                 $this->arrConfiguration[$strKey] = (int) $varValue ?? 0;
@@ -142,6 +136,7 @@ class FrontendWidget extends BaseWidget
             case 'imageResizeUpscale':
             case 'storeFile':
             case 'addToDbafs':
+            case 'directUpload':
                 $this->arrConfiguration[$strKey] = (bool) $varValue;
                 break;
 
@@ -161,7 +156,9 @@ class FrontendWidget extends BaseWidget
                 } else {
                     unset($this->arrAttributes['required']);
                 }
-            // DO NOT BREAK HERE
+            // DO NOT BREAK HERE:
+            // We pass the value to the parent class too,
+            // so it can perform its own processing.
 
             // no break
             default:
@@ -176,37 +173,14 @@ class FrontendWidget extends BaseWidget
 
     /**
      * Parse the template file and return it as string.
-     *
-     * @param array|null $arrAttributes An optional attributes array
-     *
-     * @return string The template markup
      */
     public function parse($arrAttributes = null): string
     {
-        // Initiate the session if chunking is enabled (#86).
-        // if ($this->getUploaderConfig()->isChunkingEnabled()) {
-        // /** @var ChunkUploader $chunkUploader */
-        // $chunkUploader = $this->container->get('terminal42_fineuploader.chunk_uploader');
-        // $chunkUploader->initSession($this);
-        // }
-
         if (!$this->jsConfig) {
             $this->jsConfig = $this->getConfigGenerator()->generateJavaScriptConfig($this->getUploaderConfig());
         }
 
         return parent::parse($arrAttributes);
-    }
-
-    /**
-     * Get the uploader config.
-     */
-    public function getUploaderConfig(): UploaderConfig
-    {
-        if (null === $this->uploaderConfig) {
-            $this->uploaderConfig = $this->getConfigGenerator()->generateFromWidgetAttributes($this->arrConfiguration);
-        }
-
-        return $this->uploaderConfig;
     }
 
     /**
@@ -228,23 +202,61 @@ class FrontendWidget extends BaseWidget
     }
 
     /**
-     * @param string|array|null $varInput
+     * Get the uploader config.
      */
-    protected function validator(mixed $varInput): array|string
+    public function getUploaderConfig(): UploaderConfig
     {
-        $files = $this->getWidgetHelper()->getFilesFromFileInputField($varInput);
+        if (null === $this->uploaderConfig) {
+            $this->uploaderConfig = $this->getConfigGenerator()->generateFromWidgetAttributes($this->arrConfiguration);
+        }
 
-        $isMultiple = !empty($this->arrConfiguration['multiple']) && true === $this->arrConfiguration['multiple'];
-
-        // If "multiple" is set the input type "array", otherwise "string".
-        $files = parent::validator($isMultiple ? $files : (!empty($files[0]) ? $files[0] : ''));
-
-        return $this->getWidgetHelper()->getFilesArray($this->strName, array_filter((array) $files), $this->storeFile);
+        return $this->uploaderConfig;
     }
 
     /**
-     * Set the default attributes.
+     * This will convert the transfer keys to absolute file paths,
+     * move the files to the destination directory and return the files array.
+     *
+     * Example return:
+     *
+     * ```php
+     * Array
+     * (
+     *     [Filepond_0] => Array
+     *         (
+     *             [name] => picture_1.jpg
+     *             [type] => image/jpeg
+     *             [tmp_name] => /home/aeracing/public_html/contao5/files/filepond_test/picture_1.jpg
+     *             [error] => 0
+     *             [size] => 3421295
+     *             [uuid] => 20e2c765-e2ab-11f0-b0b3-02000a14000a
+     *             [uploaded] => 1
+     *         )
+     * )
+     * ```
      */
+    protected function validator(mixed $varInput): array|string
+    {
+        // This will transform the transfer keys to absolute file paths.
+        // If directUpload is set to true, FilePond will not send any transfer keys.
+        $files = $this->getWidgetHelper()->getFilesFromFileInputField($varInput);
+
+        $isMultiple = true === $this->arrConfiguration['multiple'] ?? false;
+
+        // If "multiple" is set, the input type is "array", otherwise "string or null.
+        $varInput = match ($isMultiple) {
+            true => $files,
+            false => !empty($files[0]) ? $files[0] : null,
+        };
+
+        // This will move the files to the destination directory
+        // and return the UUIDs or relative paths if addToDbafs is set to false.
+        $files = $this->container->get(Validator::class)->validateInput($this, $varInput);
+
+        // Returns a mock of the PHP $_FILES array that is used by Contao's Form instance.
+        return $this->getWidgetHelper()->getFilesArray($this->strName, array_filter((array) $files), $this->storeFile);
+    }
+
     protected function setDefaultAttributes(): void
     {
         $this->decodeEntities = true;
@@ -255,45 +267,37 @@ class FrontendWidget extends BaseWidget
         }
     }
 
-    /**
-     * Include the assets.
-     */
-    protected function includeAssets(bool $frontendAssets = true): void
+    protected function includeAssets(): void
     {
         $manager = $this->getAssetsManager();
-        $assets = $manager->getBasicAssets();
 
-        if ($frontendAssets) {
-            $assets = array_merge($assets, $manager->getFrontendAssets($this->arrConfiguration['allowImageResize'] ?? false));
-        }
+        $allowImageResize = $this->arrConfiguration['allowImageResize'] ?? false;
+        $assets = $manager->getFrontendAssets($allowImageResize);
 
         $manager->includeAssets($assets);
     }
 
     /**
-     * Get the config generator.
+     * @noinspection PhpIncompatibleReturnTypeInspection
      */
     protected function getConfigGenerator(): ConfigGenerator
     {
-        /** @var ConfigGenerator $configGenerator */
         return $this->container->get(ConfigGenerator::class);
     }
 
     /**
-     * Get the widget helper.
+     * @noinspection PhpIncompatibleReturnTypeInspection
      */
     protected function getWidgetHelper(): WidgetHelper
     {
-        /** @var WidgetHelper $widgetHelper */
         return $this->container->get(WidgetHelper::class);
     }
 
     /**
-     * Get the assets manager.
+     * @noinspection PhpIncompatibleReturnTypeInspection
      */
     protected function getAssetsManager(): AssetsManager
     {
-        /** @var AssetsManager $assetManager */
         return $this->container->get(AssetsManager::class);
     }
 }

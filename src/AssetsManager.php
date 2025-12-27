@@ -18,10 +18,11 @@ use Symfony\Component\Asset\Packages;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
 #[Autoconfigure(public: true)]
-class AssetsManager
+readonly class AssetsManager
 {
-    public function __construct(private readonly Packages $packages)
-    {
+    public function __construct(
+        private Packages $packages,
+    ) {
     }
 
     /**
@@ -40,25 +41,6 @@ class AssetsManager
                     break;
             }
         }
-    }
-
-    /**
-     * Get the basic assets.
-     */
-    public function getBasicAssets(): array
-    {
-        return [];
-    }
-
-    /**
-     * Get the backend assets.
-     */
-    public function getBackendAssets(): array
-    {
-        return [
-            // $this->packages->getUrl('backend.css', 'terminal42_fine_uploader'),
-            // $this->packages->getUrl('filepond/dist/filepond.js', 'markocupic_contao_filepond_uploader'),
-        ];
     }
 
     /**

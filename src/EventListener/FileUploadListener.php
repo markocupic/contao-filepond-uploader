@@ -20,32 +20,29 @@ use Contao\FilesModel;
 use Contao\Validator;
 use Markocupic\ContaoFilepondUploader\Event\FileUploadEvent;
 use Markocupic\ContaoFilepondUploader\Uploader;
-use Markocupic\ContaoFilepondUploader\Widget\FrontendWidget;
+use Markocupic\ContaoFilepondUploader\Widget\FilepondFrontendWidget;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
-class FileUploadListener
+readonly class FileUploadListener
 {
     public function __construct(
-        private readonly Uploader $uploader,
+        private Uploader $uploader,
     ) {
     }
 
-    /**
-     * On file upload.
-     */
     #[AsEventListener]
     public function onFileUpload(FileUploadEvent $event): void
     {
         $widget = $event->getWidget();
-        $arrUploadResult = $this->uploader->upload($event->getRequest(), $widget);
+        $arrUploadResult = $this->uploader->upload($widget);
 
         if (null === $arrUploadResult) {
             $event->setResponse(
                 new JsonResponse([
                     'success' => false,
                     'filePondItemId' => $event->getRequest()->attributes->get('filePondItemId'),
-                    'error' => $GLOBALS['TL_LANG']['ERR']['general'],
+                    'error' => \strlen($widget->getErrorAsString()) ? $widget->getErrorAsString() : $GLOBALS['TL_LANG']['ERR']['general'],
                     'preventRetry' => true,
                 ]),
             );
@@ -56,9 +53,9 @@ class FileUploadListener
         $filePath = $arrUploadResult['filePath'];
 
         if (Validator::isUuid($filePath)) {
-            $fileModel = FilesModel::findByUuid($filePath);
+            $filesModel = FilesModel::findByUuid($filePath);
 
-            if (null === $fileModel) {
+            if (null === $filesModel) {
                 $event->setResponse(
                     new JsonResponse([
                         'success' => false,
@@ -71,11 +68,11 @@ class FileUploadListener
                 return;
             }
 
-            $filePath = $fileModel->path;
+            $filePath = $filesModel->path;
         }
 
         // Validate the image dimensions for the frontend widget
-        if ($widget instanceof FrontendWidget) {
+        if ($widget instanceof FilepondFrontendWidget) {
             $this->validateImageDimensions($widget, $filePath);
         }
 
@@ -93,6 +90,7 @@ class FileUploadListener
                 'filePondItemId' => $event->getRequest()->attributes->get('filePondItemId'),
                 'error' => null,
                 'transferKey' => $arrUploadResult['transferKey'],
+                'directUpload' => $arrUploadResult['directUpload'],
             ];
         }
 
@@ -102,7 +100,7 @@ class FileUploadListener
     /**
      * Validate the image dimensions.
      */
-    private function validateImageDimensions(FrontendWidget $widget, string $filePath): void
+    private function validateImageDimensions(FilepondFrontendWidget $widget, string $filePath): void
     {
         $file = new File($filePath);
 
