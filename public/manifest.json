@@ -1,6 +1,6 @@
 {
   "frontend.css": "/bundles/markocupiccontaofileponduploader/frontend.a9651f2f.css",
-  "frontend.js": "/bundles/markocupiccontaofileponduploader/frontend.167fa97a.js",
+  "frontend.js": "/bundles/markocupiccontaofileponduploader/frontend.51914173.js",
   "contao_filepond.js": "/bundles/markocupiccontaofileponduploader/contao_filepond.d338459d.js",
   "filepond/locale/km-km.js": "/bundles/markocupiccontaofileponduploader/filepond/locale/km-km.af6ad1a1.js",
   "filepond/locale/el-el.js": "/bundles/markocupiccontaofileponduploader/filepond/locale/el-el.f834774c.js",
@@ -48,12 +48,12 @@
   "filepond/locale/zh-hk.js": "/bundles/markocupiccontaofileponduploader/filepond/locale/zh-hk.cfcb1c1d.js",
   "filepond/locale/zh-tw.js": "/bundles/markocupiccontaofileponduploader/filepond/locale/zh-tw.cfcb1c1d.js",
   "filepond/locale/zh-cn.js": "/bundles/markocupiccontaofileponduploader/filepond/locale/zh-cn.91a94d63.js",
-  "custom_validators/filepond_image_resolution_validator.js": "/bundles/markocupiccontaofileponduploader/custom_validators/filepond_image_resolution_validator.a12f330a.js",
+  "custom_validators/filepond_image_resolution_validator.js": "/bundles/markocupiccontaofileponduploader/custom_validators/filepond_image_resolution_validator.269d82ef.js",
   "custom_validators/filepond_file_size_validator.js": "/bundles/markocupiccontaofileponduploader/custom_validators/filepond_file_size_validator.e488ecfe.js",
   "event_dispatcher.js": "/bundles/markocupiccontaofileponduploader/event_dispatcher.200c1425.js",
   "filepond.js": "/bundles/markocupiccontaofileponduploader/filepond.0b7fe2af.js",
   "listener_provider.js": "/bundles/markocupiccontaofileponduploader/listener_provider.6bd50cec.js",
   "contao_filepond_plugin.css": "/bundles/markocupiccontaofileponduploader/contao_filepond_plugin.ef45894a.css",
   "frontend.a9651f2f.css.map": "/bundles/markocupiccontaofileponduploader/frontend.a9651f2f.css.map",
-  "frontend.167fa97a.js.map": "/bundles/markocupiccontaofileponduploader/frontend.167fa97a.js.map"
+  "frontend.51914173.js.map": "/bundles/markocupiccontaofileponduploader/frontend.51914173.js.map"
 }

@@ -16,7 +16,7 @@ export class FilepondImageResolutionValidator {
         const maxImageHeight = Number(event.jsConfig.maxImageHeight) || 0;
 
         if (!(file instanceof Blob)) {
-            throw new Error(options.imageValidateSizeLabelFormatError);
+            throw new Error(options.labelImageValidateSizeLabelFormatError);
         }
 
         const {width, height} = await this.loadImage(file);

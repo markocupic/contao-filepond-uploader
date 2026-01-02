@@ -62,7 +62,7 @@ $GLOBALS['TL_LANG']['MSC']['filepond_trans_fileValidateTypeLabelExpectedTypes'] 
 // No translations available
 
 // Custom Filepond Plugin: Image validate resolution
-$GLOBALS['TL_LANG']['MSC']['filepond_trans_imageValidateSizeLabelFormatError'] = 'Image type not supported';
+$GLOBALS['TL_LANG']['MSC']['filepond_trans_labelImageValidateSizeLabelFormatError'] = 'Image type not supported';
 $GLOBALS['TL_LANG']['MSC']['filepond_trans_labelMinImageResolutionValidationError'] = 'The image resolution {width} x {height} is too small. The minimum is {minWidth} x {minHeight}';
 $GLOBALS['TL_LANG']['MSC']['filepond_trans_labelMaxImageResolutionValidationError'] = 'The image resolution {width} x {height} is too large. The max. allowed resolution is {maxWidth} x {maxHeight}.';
 
