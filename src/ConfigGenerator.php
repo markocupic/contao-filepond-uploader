@@ -109,7 +109,7 @@ readonly class ConfigGenerator
     private function buildConfigurationFromAttributes(UploaderConfig $config, array $attributes): void
     {
         $map = [
-            'extensions' => static fn ($v) => $config->setExtensions((string) $attributes['extensions'] ?? Config::get('uploadTypes')),
+            'extensions' => static fn ($v) => $config->setExtensions((string) ($attributes['extensions'] ?? Config::get('uploadTypes'))),
             'multiple' => static fn ($v) => true === $v ? $config->enableMultiple() : $config->disableMultiple(),
             'mSize' => static fn ($v) => $config->setFileLimit((int) $v),
             'minImageWidth' => static fn ($v) => $config->setMinImageWidth((int) $v),
@@ -147,19 +147,19 @@ readonly class ConfigGenerator
                 $config->setMaxFileSizeLimit((int) $v);
             }
 
-            if ('imgResizeWidth' === $key && ($attributes['imgResize'] ?? false)) {
+            if ('imgResizeWidth' === $key && true === ($attributes['imgResize'] ?? false)) {
                 $config->setImageResizeWidth($value > 0 ? (int) $value : (int) Config::get('imageWidth'));
             }
 
-            if ('imgResizeHeight' === $key && (true === $attributes['imgResize'] ?? false)) {
+            if ('imgResizeHeight' === $key && true === ($attributes['imgResize'] ?? false)) {
                 $config->setImageResizeHeight($value > 0 ? (int) $value : (int) Config::get('imageHeight'));
             }
 
-            if ('imgResizeModeBrowser' === $key && (true === $attributes['imgResizeBrowser'] ?? false) && !empty($value)) {
+            if ('imgResizeModeBrowser' === $key && true === ($attributes['imgResizeBrowser'] ?? false) && !empty($value)) {
                 $config->setBrowserImageResizeMode($value);
             }
 
-            if ('imgResizeUpscaleBrowser' === $key && (true === $attributes['imgResizeBrowser'] ?? false)) {
+            if ('imgResizeUpscaleBrowser' === $key && true === ($attributes['imgResizeBrowser'] ?? false)) {
                 $value ? $config->enableBrowserImageResizeUpscaling() : $config->disableBrowserImageResizeUpscaling();
             }
         }
@@ -231,14 +231,13 @@ readonly class ConfigGenerator
             // Filepond Plugin: File validate size
             'labelMaxFileSizeError',
             'labelMinFileSizeError',
-            'labelMaxTotalFileSizeExceeded',
-            'labelMaxTotalFileSize',
             // Filepond Plugin: File validate type
             'labelFileTypeNotAllowed',
             'fileValidateTypeLabelExpectedTypes',
             // Custom Filepond Plugin: Validate image resolution
             'labelMinImageResolutionValidationError',
             'labelMaxImageResolutionValidationError',
+            'labelImageValidateSizeLabelFormatError',
         ];
 
         $labels = [];

@@ -151,7 +151,7 @@ readonly class FileUploadListener
             'filePondItemId' => $event->getRequest()->attributes->get('filePondItemId'),
             'error' => null,
             'transferKey' => base64_encode($uploadResult['transferKey']),
-            'directUpload' => (bool) $uploadResult['directUpload'] ?? false,
+            'directUpload' => (bool) ($uploadResult['directUpload'] ?? false),
         ];
 
         $event->setResponse(new JsonResponse($response, 200));

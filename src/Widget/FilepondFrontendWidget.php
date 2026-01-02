@@ -89,7 +89,7 @@ class FilepondFrontendWidget extends Widget implements UploadableWidgetInterface
             case 'parallelUploads':
             case 'maxImageWidth':
             case 'maxImageHeight':
-                $this->arrConfiguration[$strKey] = (int) $varValue ?? 0;
+                $this->arrConfiguration[$strKey] = (int) ($varValue ?? 0);
                 break;
 
             case 'imgResizeBrowser':
@@ -202,12 +202,12 @@ class FilepondFrontendWidget extends Widget implements UploadableWidgetInterface
 
     public function getMaximumUploadSize(): int
     {
-        return $this->getConfiguration()['maxlength'];
+        return $this->getConfiguration()['maxlength'] ?? 0;
     }
 
     public function getMinimumUploadSize(): int
     {
-        return $this->getConfiguration()['minlength'];
+        return $this->getConfiguration()['minlength'] ?? 0;
     }
 
     protected function setDefaultAttributes(array $attributes): void
@@ -219,7 +219,7 @@ class FilepondFrontendWidget extends Widget implements UploadableWidgetInterface
         $this->arrConfiguration['uploadPath'] = empty($attributes['uploadPath']) ? System::getContainer()->getParameter('markocupic_contao_filepond_uploader.tmp_path') : (string) $attributes['uploadPath'];
 
         // Upload field (multiple or single)
-        $this->arrConfiguration['mandatory'] = (bool) $attributes['mandatory'] ?? false;
+        $this->arrConfiguration['mandatory'] = (bool) ($attributes['mandatory'] ?? false);
 
         // Set the uploader limit to 1 if it's not multiple
         if (empty($this->arrConfiguration['multiple'])) {
@@ -258,7 +258,7 @@ class FilepondFrontendWidget extends Widget implements UploadableWidgetInterface
         // If directUpload is set to true, FilePond will not send any transfer keys.
         $files = $this->getWidgetHelper()->getFilesFromFileInputField($varInput);
 
-        $isMultiple = true === $this->arrConfiguration['multiple'] ?? false;
+        $isMultiple = true === ($this->arrConfiguration['multiple'] ?? false);
 
         // If "multiple" is set, the input type is "array", otherwise "string or null.
         $varInput = match ($isMultiple) {
