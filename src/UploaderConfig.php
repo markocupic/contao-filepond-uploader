@@ -17,11 +17,6 @@ namespace Markocupic\ContaoFilepondUploader;
 class UploaderConfig
 {
     /**
-     * Debug mode.
-     */
-    private bool $debug = false;
-
-    /**
      * Allowed extensions.
      */
     private string $extensions = '';
@@ -39,12 +34,12 @@ class UploaderConfig
     /**
      * Minimum file size.
      */
-    private int $minSizeLimit = 0;
+    private int $minFileSizeLimit = 0;
 
     /**
      * Maximum file size.
      */
-    private int $maxSizeLimit = 0;
+    private int $maxFileSizeLimit = 0;
 
     /**
      * Minimum image width.
@@ -69,17 +64,17 @@ class UploaderConfig
     /**
      * Maximum number of connections.
      */
-    private int $maxConnections = 3;
+    private int $parallelUploads = 3;
 
     /**
-     * Allow chunking.
+     * Allow chunkUploads.
      */
-    private bool $chunking = false;
+    private bool $chunkUploads = false;
 
     /**
      * Chunk size.
      */
-    private int $chunkSize = 0;
+    private int $chunkSize = 1000000;
 
     /**
      * Allow direct upload.
@@ -104,7 +99,7 @@ class UploaderConfig
     /**
      * Upload folder.
      */
-    private string $uploadFolder = '';
+    private string $uploadFolder = 'system/tmp';
 
     /**
      * Labels.
@@ -112,57 +107,34 @@ class UploaderConfig
     private array $labels = [];
 
     /**
-     * Allow client side image resize.
+     * Allow image resizing.
      */
-    private bool $allowImageResize = false;
+    private bool $imgResize = false;
 
     /**
-     * Client side image resize target width (pixels).
+     * Image resize target width (pixels).
      */
-    private int $imageResizeTargetWidth = 0;
+    private int $imgResizeWidth = 0;
 
     /**
-     * Client side image resize target height (pixels).
+     * Image resize target height (pixels).
      */
-    private int $imageResizeTargetHeight = 0;
+    private int $imgResizeHeight = 0;
+
+    /**
+     * Allow client side image resizing.
+     */
+    private bool $imgResizeBrowser = false;
 
     /**
      * Client side image resize mode.
      */
-    private string $imageResizeMode = 'contain';
+    private string $imgResizeModeBrowser = 'contain';
 
     /**
      * Client side image resize upscale.
      */
-    private bool $imageResizeUpscale = false;
-
-    /**
-     * Return true if debug mode is enabled.
-     */
-    public function isDebugEnabled(): bool
-    {
-        return $this->debug;
-    }
-
-    /**
-     * Enable debug.
-     */
-    public function enableDebug(): self
-    {
-        $this->debug = true;
-
-        return $this;
-    }
-
-    /**
-     * Disable debug.
-     */
-    public function disableDebug(): self
-    {
-        $this->debug = false;
-
-        return $this;
-    }
+    private bool $imgResizeUpscaleBrowser = false;
 
     /**
      * Get the allowed extensions.
@@ -231,17 +203,17 @@ class UploaderConfig
     /**
      * Get the minimum file size limit.
      */
-    public function getMinSizeLimit(): int
+    public function getMinFileSizeLimit(): int
     {
-        return $this->minSizeLimit;
+        return $this->minFileSizeLimit;
     }
 
     /**
      * Set the minimum file size limit.
      */
-    public function setMinSizeLimit($minSizeLimit): self
+    public function setMinFileSizeLimit($minFileSizeLimit): self
     {
-        $this->minSizeLimit = (int) $minSizeLimit;
+        $this->minFileSizeLimit = (int) $minFileSizeLimit;
 
         return $this;
     }
@@ -249,17 +221,17 @@ class UploaderConfig
     /**
      * Get the maximum file size limit.
      */
-    public function getMaxSizeLimit(): int
+    public function getMaxFileSizeLimit(): int
     {
-        return $this->maxSizeLimit;
+        return $this->maxFileSizeLimit;
     }
 
     /**
      * Set the maximum file size limit.
      */
-    public function setMaxSizeLimit(int $maxSizeLimit): self
+    public function setMaxFileSizeLimit(int $maxFileSizeLimit): self
     {
-        $this->maxSizeLimit = $maxSizeLimit;
+        $this->maxFileSizeLimit = $maxFileSizeLimit;
 
         return $this;
     }
@@ -339,45 +311,45 @@ class UploaderConfig
     /**
      * Get the maximum number of connections.
      */
-    public function getMaxConnections(): int
+    public function getParallelUploads(): int
     {
-        return $this->maxConnections;
+        return $this->parallelUploads;
     }
 
     /**
      * Set the maximum number of connections.
      */
-    public function setMaxConnections(int $maxConnections): self
+    public function setParallelUploads(int $parallelUploads): self
     {
-        $this->maxConnections = $maxConnections;
+        $this->parallelUploads = $parallelUploads;
 
         return $this;
     }
 
     /**
-     * Return true if chunking is enabled.
+     * Return true if chunkUploads is enabled.
      */
     public function isChunkingEnabled(): bool
     {
-        return $this->chunking;
+        return $this->chunkUploads;
     }
 
     /**
-     * Enable chunking.
+     * Enable chunkUploads.
      */
     public function enableChunking(): self
     {
-        $this->chunking = true;
+        $this->chunkUploads = true;
 
         return $this;
     }
 
     /**
-     * Disable chunking.
+     * Disable chunkUploads.
      */
     public function disableChunking(): self
     {
-        $this->chunking = false;
+        $this->chunkUploads = false;
 
         return $this;
     }
@@ -405,7 +377,7 @@ class UploaderConfig
      */
     public function isDirectUploadEnabled(): bool
     {
-        return $this->directUpload && $this->storeFile;
+        return true === $this->directUpload && true === $this->storeFile;
     }
 
     /**
@@ -549,29 +521,29 @@ class UploaderConfig
     }
 
     /**
-     * Return true if the client side image resizing is enabled.
+     * Return true if the image resizing is enabled.
      */
     public function isImageResizingEnabled(): bool
     {
-        return $this->allowImageResize;
+        return $this->imgResize;
     }
 
     /**
-     * Enable the client side image resizing.
+     * Enable the image resizing.
      */
-    public function enableImageResize(): self
+    public function enableImageResizing(): self
     {
-        $this->allowImageResize = true;
+        $this->imgResize = true;
 
         return $this;
     }
 
     /**
-     * Disable the client side image resizing.
+     * Disable the image resizing.
      */
-    public function disableImageResize(): self
+    public function disableImageResizing(): self
     {
-        $this->allowImageResize = false;
+        $this->imgResize = false;
 
         return $this;
     }
@@ -579,17 +551,17 @@ class UploaderConfig
     /**
      * Get the image resize target width.
      */
-    public function getImageResizeTargetWidth(): int
+    public function getImageResizeWidth(): int
     {
-        return $this->imageResizeTargetWidth;
+        return $this->imgResizeWidth;
     }
 
     /**
      * Set the image resize target width.
      */
-    public function setImageResizeTargetWidth(int $imageResizeTargetWidth): self
+    public function setImageResizeWidth(int $imgResizeWidth): self
     {
-        $this->imageResizeTargetWidth = $imageResizeTargetWidth;
+        $this->imgResizeWidth = $imgResizeWidth;
 
         return $this;
     }
@@ -597,17 +569,45 @@ class UploaderConfig
     /**
      * Get the image resize target height.
      */
-    public function getImageResizeTargetHeight(): int
+    public function getImageResizeHeight(): int
     {
-        return $this->imageResizeTargetHeight;
+        return $this->imgResizeHeight;
     }
 
     /**
      * Set the image resize target height.
      */
-    public function setImageResizeTargetHeight(int $imageResizeTargetHeight): self
+    public function setImageResizeHeight(int $imgResizeHeight): self
     {
-        $this->imageResizeTargetHeight = $imageResizeTargetHeight;
+        $this->imgResizeHeight = $imgResizeHeight;
+
+        return $this;
+    }
+
+    /**
+     * Return true if the client side image resizing is enabled.
+     */
+    public function isBrowserImageResizingEnabled(): bool
+    {
+        return $this->imgResizeBrowser;
+    }
+
+    /**
+     * Enable the client side image resizing.
+     */
+    public function enableBrowserImageResizing(): self
+    {
+        $this->imgResizeBrowser = true;
+
+        return $this;
+    }
+
+    /**
+     * Disable the client side image resizing.
+     */
+    public function disableBrowserImageResizing(): self
+    {
+        $this->imgResizeBrowser = false;
 
         return $this;
     }
@@ -615,17 +615,17 @@ class UploaderConfig
     /**
      * Get the image resize mode.
      */
-    public function getImageResizeMode(): string
+    public function getBrowserImageResizeMode(): string
     {
-        return $this->imageResizeMode;
+        return $this->imgResizeModeBrowser;
     }
 
     /**
      * Set the image resize mode.
      */
-    public function setImageResizeMode(string $imageResizeMode): self
+    public function setBrowserImageResizeMode(string $imgResizeModeBrowser): self
     {
-        $this->imageResizeMode = $imageResizeMode;
+        $this->imgResizeModeBrowser = $imgResizeModeBrowser;
 
         return $this;
     }
@@ -633,17 +633,17 @@ class UploaderConfig
     /**
      * Return true if the client side image resize upscaling is enabled.
      */
-    public function isImageResizeUpscalingEnabled(): bool
+    public function isBrowserImageResizeUpscalingEnabled(): bool
     {
-        return $this->imageResizeUpscale;
+        return $this->imgResizeUpscaleBrowser;
     }
 
     /**
      * Enable client side image resize upscaling.
      */
-    public function enableImageResizeUpscale(): self
+    public function enableBrowserImageResizeUpscaling(): self
     {
-        $this->imageResizeUpscale = true;
+        $this->imgResizeUpscaleBrowser = true;
 
         return $this;
     }
@@ -651,9 +651,9 @@ class UploaderConfig
     /**
      * Disable client side image resize upscaling.
      */
-    public function disableImageResizeUpscale(): self
+    public function disableBrowserImageResizeUpscaling(): self
     {
-        $this->imageResizeUpscale = false;
+        $this->imgResizeUpscaleBrowser = false;
 
         return $this;
     }

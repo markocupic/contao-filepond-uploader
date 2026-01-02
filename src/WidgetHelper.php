@@ -14,7 +14,6 @@ declare(strict_types=1);
 
 namespace Markocupic\ContaoFilepondUploader;
 
-use Contao\File;
 use Contao\FilesModel;
 use Contao\StringUtil;
 use Contao\Validator;
@@ -27,7 +26,6 @@ use Symfony\Component\Finder\Finder;
 readonly class WidgetHelper
 {
     public function __construct(
-        private Filesystem $fs,
         private TransferKey $transferKey,
         #[Autowire('%kernel.project_dir%')]
         private string $projectDir,
@@ -53,27 +51,40 @@ readonly class WidgetHelper
                 continue;
             }
 
-            if (!$this->transferKey->validate($transferKey)) {
-                throw new \Exception('Invalid transferKey: '.$transferKey);
-            }
+            $result = $this->getFileFromTransferKey($transferKey);
 
-            if (null === ($objSplFileInfo = $this->getFileFromTransferKey($transferKey))) {
+            if (null === $result) {
                 continue;
             }
 
-            if (!is_file($objSplFileInfo->getRealPath())) {
-                continue;
-            }
-
-            $return[] = $objSplFileInfo->getRealPath();
+            $return[] = $result;
         }
 
         return $return;
     }
 
-    public function getFileFromTransferKey(string $transferKey): \SplFileInfo|null
+    public function getFileFromTransferKey(string $transferKey): string|null
     {
         if ('' === $transferKey) {
+            return null;
+        }
+
+        $transferKey = base64_decode($transferKey, true);
+
+        // 1) File was uploaded directly and added to the DBAFS -> return the UUID
+        if (Validator::isUuid($transferKey) && null !== FilesModel::findByUuid($transferKey)) {
+            return $transferKey;
+        }
+
+        // 2) File was uploaded directly but not added to the DBAFS -> return the relative path
+        $absolutePath = Path::makeAbsolute($transferKey, $this->projectDir);
+
+        if (is_file($absolutePath)) {
+            return $transferKey;
+        }
+
+        // 3) Invalid FilePond transfer key -> return null
+        if (!$this->transferKey->validate($transferKey)) {
             return null;
         }
 
@@ -83,21 +94,22 @@ readonly class WidgetHelper
             return null;
         }
 
-        $finder = new Finder();
-        $results = iterator_to_array($finder->files()->in($tmpPath));
+        // 4) Each folder contains only one file → return the file path of the first match
+        $finder = (new Finder())->files()->in($tmpPath);
+        $file = current(iterator_to_array($finder));
 
-        // Each folder contains only one file
-        return $results[array_key_first($results)] ?? null;
+        return $file ? $file->getRealPath() : null;
     }
 
     /**
      * Returns an array with all the information per file that Contao expects for the widget's value.
      */
-    public function getFilesArray(string $name, array $files, bool|null $storeFile = null): array
+    public function getFilesArray(string $name, array $files, bool $storeFile = false): array
     {
-        $storeFile = $storeFile ?? true;
         $count = 0;
-        $return = [];
+        $arrFiles = [];
+
+        $files = array_map('base64_decode', $files);
 
         foreach ($files as $file) {
             $model = null;
@@ -108,35 +120,37 @@ readonly class WidgetHelper
                     continue;
                 }
 
-                $filePath = $model->path;
+                $filePath = Path::makeAbsolute($model->path, $this->projectDir);
             } else {
                 // If the file path is absolute.
-                $filePath = Path::makeRelative($file, $this->projectDir);
+                $filePath = $file;
             }
 
-            $file = new File($filePath);
-
-            if (!$file->exists()) {
+            if (!is_file($filePath)) {
                 continue;
             }
 
+            $file = new \SplFileInfo($filePath);
+
             $key = $name.'_'.$count++;
 
-            $return[$key] = [
-                'name' => $file->name,
-                'type' => $file->mime,
-                'tmp_name' => Path::join($this->projectDir, $file->path),
+            $arrFile = [
+                'name' => $file->getBasename(),
+                'type' => $file->getMTime(),
+                'tmp_name' => $file->getRealPath(), // Must be absolute and inside the project directory
                 'error' => 0,
-                'size' => $file->size,
+                'size' => $file->getSize(),
                 'uuid' => null !== $model ? StringUtil::binToUuid($model->uuid) : '',
             ];
 
             // Only set the 'uploaded' key if we store the file (https://github.com/contao/contao/pull/7039)
             if ($storeFile) {
-                $return[$key]['uploaded'] = true;
+                $arrFile['uploaded'] = true;
             }
+
+            $arrFiles[$key] = $arrFile;
         }
 
-        return $return;
+        return $arrFiles;
     }
 }

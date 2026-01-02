@@ -22,17 +22,12 @@
 
   <script>
       document.addEventListener('DOMContentLoaded', () => {
-
-          if (typeof FilePond === undefined || typeof FilePond !== 'object') {
-              return;
-          }
-
           const id = '<?= $this->id ?>';
           const jsConfig = JSON.parse('<?= json_encode($this->jsConfig) ?>');
           const name = '<?= $this->name ?>';
           const widget = document.querySelector('#filepond-widget-' + id + ' input.filepond');
 
-          const filePond = new ContaoFilepondPlugin(widget, name, jsConfig, FilePond);
+          const filePond = new window.ContaoFilepond(widget, name, jsConfig);
           filePond.run();
       });
   </script>

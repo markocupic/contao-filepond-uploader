@@ -1,11 +1,11 @@
 {
   "entrypoints": {
     "frontend": {
-      "js": [
-        "/bundles/markocupiccontaofileponduploader/frontend.31d6cfe0.js"
-      ],
       "css": [
         "/bundles/markocupiccontaofileponduploader/frontend.a9651f2f.css"
+      ],
+      "js": [
+        "/bundles/markocupiccontaofileponduploader/frontend.167fa97a.js"
       ]
     }
   }

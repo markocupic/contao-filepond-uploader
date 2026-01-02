@@ -15,7 +15,6 @@ declare(strict_types=1);
 namespace Markocupic\ContaoFilepondUploader\Chunk;
 
 use Contao\StringUtil;
-use Contao\System;
 use Markocupic\ContaoFilepondUploader\TransferKey;
 use Markocupic\ContaoFilepondUploader\Widget\FilepondFrontendWidget;
 use Psr\Log\LoggerInterface;
@@ -23,6 +22,8 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
+use Symfony\Component\HttpFoundation\File\File;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 class ChunkProcessor
 {
@@ -49,19 +50,19 @@ class ChunkProcessor
     /**
      * Processes an upload chunk.
      */
-    public function processChunk(FilepondFrontendWidget $widget, array $chunkData, string $fileName, string $filePondItemId, int $offset, int $totalSize): array
+    public function processChunk(UploadedFile $file, FilepondFrontendWidget $widget, string $fileName, string $filePondItemId, int $offset, int $totalSize): array
     {
         // Validation
         if (empty($fileName)) {
-            throw new \InvalidArgumentException('File name must not be empty');
+            throw new \InvalidArgumentException('File name must not be empty.');
         }
 
         if ($offset < 0 || $totalSize <= 0) {
-            throw new \InvalidArgumentException('Invalid offset or size values');
+            throw new \InvalidArgumentException('Invalid offset or size values.');
         }
 
         if ($offset >= $totalSize) {
-            throw new \InvalidArgumentException('Offset exceeds file size');
+            throw new \InvalidArgumentException('Offset exceeds file size.');
         }
 
         $safeFileName = StringUtil::sanitizeFileName($fileName);
@@ -74,12 +75,7 @@ class ChunkProcessor
             $this->filesystem->mkdir(\dirname($chunkFile), 0755);
         }
 
-        // Extract actual chunk data from array
-        $chunkContent = $this->extractChunkContent($chunkData);
-
-        if (false === file_put_contents($chunkFile, $chunkContent, LOCK_EX)) {
-            throw new FileException('Error saving chunk');
-        }
+        $file->move(\dirname($chunkFile), basename($chunkFile));
 
         // Check if all chunks have been received
         $isComplete = $this->isChunkUploadCompleted($filePondItemId, $totalSize);
@@ -92,10 +88,6 @@ class ChunkProcessor
             try {
                 // Assemble all chunks
                 $finalFile = $this->assembleChunks($transferKey, $filePondItemId, $safeFileName, $totalSize);
-
-                // Validate the file
-                $this->validateFile($finalFile, $widget);
-
                 $success = true;
             } catch (\Exception $e) {
                 $error = $widget->hasErrors() ? $widget->getErrorAsString() : 'Unknown error';
@@ -104,18 +96,17 @@ class ChunkProcessor
 
             return [
                 'success' => $success,
-                'offset' => $offset,
-                'totalSize' => $totalSize,
-                'fileName' => $fileName,
+                'completed' => true,
+                'file' => $finalFile ?? null,
+                'filePath' => !empty($finalFile) ? $finalFile->getRealPath() : null,
+                'clientOriginalFileName' => $safeFileName,
                 'filePondItemId' => $filePondItemId,
                 'transferKey' => $transferKey,
-                'filePath' => !empty($finalFile) ? $finalFile->getRealPath() : null,
-                'completed' => true,
                 'error' => $error,
             ];
         }
 
-        $this->contaoGeneralLogger->debug(\sprintf('File %s has been uploaded by FilePond to "%s" using the Chunk-Method', $fileName, $this->tempDir));
+        $this->contaoGeneralLogger->info(\sprintf('File %s has been uploaded by FilePond to "%s" using the Chunk-Method', $fileName, $this->tempDir));
 
         return [
             'success' => true,
@@ -166,34 +157,6 @@ class ChunkProcessor
     }
 
     /**
-     * Extracts the actual chunk content from the uploaded data array.
-     */
-    private function extractChunkContent(array $chunkData): string
-    {
-        // If it's a $_FILES array structure
-        if (isset($chunkData['tmp_name']) && is_uploaded_file($chunkData['tmp_name'])) {
-            $content = file_get_contents($chunkData['tmp_name']);
-            if (false === $content) {
-                throw new FileException('Failed to read uploaded chunk file');
-            }
-
-            return $content;
-        }
-
-        // If it's a direct data array with content
-        if (isset($chunkData['content'])) {
-            return $chunkData['content'];
-        }
-
-        // If it's just the raw content as string in an array
-        if (isset($chunkData[0]) && \is_string($chunkData[0])) {
-            return $chunkData[0];
-        }
-
-        throw new \InvalidArgumentException('Invalid chunk data format. Expected file upload array or content string');
-    }
-
-    /**
      * Returns the chunk directory for a transfer key.
      */
     private function getChunkDirectory(string $filePondItemId): string
@@ -240,16 +203,16 @@ class ChunkProcessor
     /**
      * Assembles all chunks into a final file.
      */
-    private function assembleChunks(string $transferKey, string $filePondItemId, string $fileName, int $totalSize): \SplFileInfo
+    private function assembleChunks(string $transferKey, string $filePondItemId, string $fileName, int $totalSize): File
     {
         $chunkDir = $this->getChunkDirectory($filePondItemId);
-        $finalFile = Path::join($this->tempDir, $transferKey, $fileName);
+        $path = Path::join($this->tempDir, $transferKey, $fileName);
 
         // Create the final file directory
-        $this->filesystem->mkdir(\dirname($finalFile));
+        $this->filesystem->mkdir(\dirname($path));
 
         // Open the final file for writing
-        $handle = fopen($finalFile, 'w');
+        $handle = fopen($path, 'w');
 
         if (false === $handle) {
             throw new FileException('Could not create final file');
@@ -288,45 +251,21 @@ class ChunkProcessor
             fclose($handle);
 
             // Validate final file size
-            $actualSize = filesize($finalFile);
+            $actualSize = filesize($path);
 
             if ($actualSize !== $totalSize) {
                 throw new FileException(\sprintf('File size does not match. Expected: %d, Received: %d', $totalSize, $actualSize));
             }
 
-            return new \SplFileInfo($finalFile);
+            return new File($path);
         } catch (\Exception $e) {
             fclose($handle);
 
-            if (file_exists($finalFile)) {
-                unlink($finalFile);
+            if (file_exists($path)) {
+                unlink($path);
             }
 
             throw $e;
         }
-    }
-
-    private function validateFile(\SplFileInfo $file, FilepondFrontendWidget $widget): bool
-    {
-        $config = $widget->getUploaderConfig();
-        $minSizeLimit = $config->getMinSizeLimit();
-
-        // Validate the minimum size limit
-        if ($minSizeLimit > 0 && $file->getSize() < $minSizeLimit) {
-            $widget->addError(\sprintf($GLOBALS['TL_LANG']['ERR']['minFileSize'], System::getReadableSize($minSizeLimit)));
-
-            throw new \Exception('The uploaded file is smaller than the minimum allowed size.');
-        }
-
-        $maxSizeLimit = $config->getMaxSizeLimit();
-
-        // Validate the maximum size limit
-        if ($maxSizeLimit > 0 && $file->getSize() > $maxSizeLimit) {
-            $widget->addError(\sprintf($GLOBALS['TL_LANG']['ERR']['filesize'], System::getReadableSize($maxSizeLimit)));
-
-            throw new \Exception('The uploaded file exceeds the maximum allowed size.');
-        }
-
-        return true;
     }
 }

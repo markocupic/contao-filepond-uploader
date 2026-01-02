@@ -15,12 +15,15 @@ declare(strict_types=1);
 namespace Markocupic\ContaoFilepondUploader\RequestHandler;
 
 use Contao\CoreBundle\Routing\ScopeMatcher;
+use Contao\Widget;
 use Markocupic\ContaoFilepondUploader\Event\ChunkUploadEvent;
 use Markocupic\ContaoFilepondUploader\Event\FileUploadEvent;
 use Markocupic\ContaoFilepondUploader\Widget\FilepondFrontendWidget;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -37,6 +40,8 @@ readonly class FrontendHandler
     public function __construct(
         private EventDispatcherInterface $eventDispatcher,
         private LoggerInterface|null $contaoErrorLogger,
+        #[Autowire('%kernel.debug%')]
+        private bool $debug,
         private ScopeMatcher $scopeMatcher,
     ) {
     }
@@ -64,9 +69,12 @@ readonly class FrontendHandler
             $action = $this->getAction($request);
             if ($action === self::ACTIONS['FILEPOND_UPLOAD_CHUNK']) {
                 // Do some additional validation for chunk requests
-                $this->validateChunkRequest($request);
+                $this->validateChunkRequest($request, $widget);
             }
         } catch (\Exception $e) {
+            if ($this->debug) {
+                throw $e;
+            }
             $this->contaoErrorLogger?->error($e->getMessage());
 
             return new Response('Bad Request', 400);
@@ -86,7 +94,9 @@ readonly class FrontendHandler
         $action = $this->getAction($request);
 
         if ($action === self::ACTIONS['FILEPOND_UPLOAD_CHUNK']) {
-            $event = new ChunkUploadEvent($request, new JsonResponse(), $widget);
+            $file = $request->files->get($widget->name.'_chunk');
+
+            $event = new ChunkUploadEvent($file, $widget, $request, new JsonResponse());
             $eventDispatcher->dispatch($event);
 
             return $event->getResponse();
@@ -129,7 +139,7 @@ readonly class FrontendHandler
     /**
      * Validate the request.
      */
-    private function validateChunkRequest(Request $request): void
+    private function validateChunkRequest(Request $request, Widget $widget): void
     {
         $action = $this->getAction($request);
 
@@ -145,8 +155,10 @@ readonly class FrontendHandler
             }
         }
 
-        if (empty($_FILES['chunk'])) {
-            throw new BadRequestHttpException('Missing FILES parameter: "chunk"');
+        $file = $request->files->get($widget->name.'_chunk');
+
+        if (empty($file) || !$file instanceof UploadedFile) {
+            throw new BadRequestHttpException(\sprintf('$_FILES["%s_chunk"] should not be empty.', $widget->name));
         }
     }
 

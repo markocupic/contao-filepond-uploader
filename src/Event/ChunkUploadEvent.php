@@ -15,30 +15,39 @@ declare(strict_types=1);
 namespace Markocupic\ContaoFilepondUploader\Event;
 
 use Markocupic\ContaoFilepondUploader\Widget\FilepondFrontendWidget;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Contracts\EventDispatcher\Event;
 
-class FileUploadEvent extends Event
+class ChunkUploadEvent extends Event
 {
-    private readonly string $fileChecksum;
+    private string $fileName;
+
+    private string $filePondItemId;
+
+    private int $offset;
+
+    private int $totalSize;
+
+    private string $fileChecksum;
 
     public function __construct(
-        private Request $request,
+        private readonly UploadedFile $chunkFile,
+        private readonly FilepondFrontendWidget $widget,
+        private readonly Request $request,
         private JsonResponse $response,
-        private FilepondFrontendWidget $widget,
     ) {
+        $this->fileName = $request->request->get('fileName');
+        $this->filePondItemId = $request->headers->get('filePondItemId');
+        $this->offset = (int) $request->request->get('offset');
+        $this->totalSize = (int) $request->request->get('totalSize');
         $this->fileChecksum = $request->request->get('fileChecksum');
     }
 
     public function getRequest(): Request
     {
         return $this->request;
-    }
-
-    public function setRequest(Request $request): void
-    {
-        $this->request = $request;
     }
 
     public function getResponse(): JsonResponse
@@ -56,9 +65,29 @@ class FileUploadEvent extends Event
         return $this->widget;
     }
 
-    public function setWidget(FilepondFrontendWidget $widget): void
+    public function getChunkFile(): UploadedFile
     {
-        $this->widget = $widget;
+        return $this->chunkFile;
+    }
+
+    public function getFileName(): string
+    {
+        return $this->fileName;
+    }
+
+    public function getFilePondItemId(): string
+    {
+        return $this->filePondItemId;
+    }
+
+    public function getOffset(): int
+    {
+        return $this->offset;
+    }
+
+    public function getTotalSize(): int
+    {
+        return $this->totalSize;
     }
 
     public function getFileChecksum(): string

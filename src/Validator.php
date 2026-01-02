@@ -14,14 +14,18 @@ declare(strict_types=1);
 
 namespace Markocupic\ContaoFilepondUploader;
 
+use Markocupic\ContaoFilepondUploader\Upload\FileUploader;
 use Markocupic\ContaoFilepondUploader\Widget\FilepondFrontendWidget;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
 #[Autoconfigure(public: true)]
 readonly class Validator
 {
     public function __construct(
-        private Uploader $uploader,
+        private FileUploader $fileUploader,
+        #[Autowire('%kernel.project_dir%')]
+        private string $projectDir,
     ) {
     }
 
@@ -42,6 +46,11 @@ readonly class Validator
         }
 
         return $this->validateSingleFile($widget, $varInput);
+    }
+
+    public function isUuid(string $value): bool
+    {
+        return \Contao\Validator::isUuid($value);
     }
 
     /**
@@ -71,7 +80,9 @@ readonly class Validator
         try {
             // Returns the UUID of the uploaded file if addToDbafs is set to true,
             // otherwise the relative path to the uploaded file.
-            return $this->uploader->storeFile($widget->getUploaderConfig(), $varInput);
+            $pathOrUuid = $this->fileUploader->storeFile($widget->getUploaderConfig(), $varInput);
+
+            return base64_encode($pathOrUuid);
         } catch (\Exception $e) {
             $widget->addError($GLOBALS['TL_LANG']['ERR']['emptyUpload']);
         }
@@ -100,7 +111,8 @@ readonly class Validator
             try {
                 // Returns the UUID of the uploaded file if addToDbafs is set to true,
                 // otherwise the relative path to the uploaded file.
-                $inputs[$k] = $this->uploader->storeFile($config, $splFileInfo);
+                $pathOrUuid = $this->fileUploader->storeFile($config, $splFileInfo);
+                $inputs[$k] = base64_encode($pathOrUuid);
             } catch (\Exception $e) {
                 $widget->addError($GLOBALS['TL_LANG']['ERR']['emptyUpload']);
             }

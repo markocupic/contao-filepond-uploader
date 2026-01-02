@@ -22,7 +22,7 @@ use Markocupic\ContaoFilepondUploader\Widget\FilepondFrontendWidget;
 #[AsHook('prepareFormData')]
 readonly class PrepareFormDataListener
 {
-    public function __invoke(array &$submittedData, array $labels, array $fields, Form $form, ?array &$files = null): void
+    public function __invoke(array &$submittedData, array $labels, array $fields, Form $form, ?array &$arrFiles = null): void
     {
         /** @var FormFieldModel $model */
         foreach ($fields as $name => $model) {
@@ -30,34 +30,25 @@ readonly class PrepareFormDataListener
                 continue;
             }
 
-            $this->transformFilepondSubmittedData($submittedData, $name);
-            $this->normalizeFilesArray($files, $name);
-        }
-    }
+            if (isset($submittedData[$name])) {
+                if (1 === \count($submittedData[$name])) {
+                    $submittedData[$name] = reset($submittedData[$name]);
+                } else {
+                    $submittedData[$name] = array_map(static fn (array $file): string => $file['tmp_name'], $submittedData[$name]);
+                }
+            }
 
-    /**
-     * Transforms the Filepond file structure by extracting only the tmp_name values.
-     */
-    private function transformFilepondSubmittedData(array &$submittedData, string $fieldName): void
-    {
-        if (!isset($submittedData[$fieldName])) {
-            return;
-        }
-        $submittedData[$fieldName] = array_map(
-            static fn (array $file): string => $file['tmp_name'],
-            $submittedData[$fieldName],
-        );
-    }
+            if (isset($arrFiles[$name])) {
+                if (1 === \count($arrFiles[$name])) {
+                    $arrFiles[$name] = reset($arrFiles[$name]);
+                } else {
+                    foreach ($arrFiles[$name] as $key => $file) {
+                        $arrFiles[$key] = $file;
+                    }
 
-    /**
-     * Normalizes the "files" array by re-indexing the entries.
-     */
-    private function normalizeFilesArray(?array &$files, string $fieldName): void
-    {
-        if (!isset($files[$fieldName])) {
-            return;
+                    unset($arrFiles[$name]);
+                }
+            }
         }
-
-        $files[$fieldName] = array_values($files[$fieldName]);
     }
 }

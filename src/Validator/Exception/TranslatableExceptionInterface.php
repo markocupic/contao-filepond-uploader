@@ -12,15 +12,11 @@ declare(strict_types=1);
  * @link https://github.com/markocupic/contao-filepond-uploader
  */
 
-namespace Markocupic\ContaoFilepondUploader;
+namespace Markocupic\ContaoFilepondUploader\Validator\Exception;
 
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
-
-readonly class Uploader
+interface TranslatableExceptionInterface
 {
-    public function __construct(
-        #[Autowire('%kernel.project_dir%')]
-        private string $projectDir,
-    ) {
-    }
+    public function getTranslatableText(): string;
+
+    public function getParams(): array;
 }

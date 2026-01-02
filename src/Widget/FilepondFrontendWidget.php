@@ -14,7 +14,6 @@ declare(strict_types=1);
 
 namespace Markocupic\ContaoFilepondUploader\Widget;
 
-use Contao\Config;
 use Contao\CoreBundle\Exception\ResponseException;
 use Contao\System;
 use Contao\UploadableWidgetInterface;
@@ -49,29 +48,12 @@ class FilepondFrontendWidget extends Widget implements UploadableWidgetInterface
         // First run the parent constructor, then add our custom attributes
         parent::__construct($attributes);
 
-        // Set defaults
-        $this->arrConfiguration['maxlength'] = Config::get('maxFileSize') ?? 0; // max file size in bytes
-        $this->arrConfiguration['minlength'] = 0; // min file size in bytes
-        $this->arrConfiguration['maxImageWidth'] = Config::get('imageWidth') ?? 0; // max image width in pixels
-        $this->arrConfiguration['maxImageHeight'] = Config::get('imageHeight') ?? 0; // max image height in pixels
-
-        if (!empty($attributes)) {
-            // Override defaults with values form field config.
-            $attr = $attributes;
-            $row = [];
-            $row['maxlength'] = !empty($attr['maxlength']) ? $attr['maxlength'] : $this->arrConfiguration['maxlength']; // max file size in bytes
-            $row['minlength'] = !empty($attr['minlength']) ? $attr['minlength'] : $this->arrConfiguration['minlength']; // min file size in bytes
-            $row['maxImageWidth'] = !empty($attr['maxImageWidth']) ? $attr['maxImageWidth'] : $this->arrConfiguration['maxImageWidth']; // max image width in pixels
-            $row['maxImageHeight'] = !empty($attr['maxImageHeight']) ? $attr['maxImageHeight'] : $this->arrConfiguration['maxImageHeight']; // max image height in pixels
-
-            $this->arrConfiguration = array_merge($this->arrConfiguration, $row);
-        }
-
-        $this->blnSubmitInput = true;
         $this->container = System::getContainer();
 
         // Set the default attributes
-        $this->setDefaultAttributes();
+        $this->setDefaultAttributes($attributes ?? []);
+
+        // Add the Filepond assets
         $this->includeAssets();
 
         $request = $this->getRequest();
@@ -94,7 +76,7 @@ class FilepondFrontendWidget extends Widget implements UploadableWidgetInterface
     {
         switch ($strKey) {
             case 'extensions':
-            case 'imageResizeMode':
+            case 'imgResizeModeBrowser':
                 $this->arrConfiguration[$strKey] = (string) $varValue;
                 break;
 
@@ -104,36 +86,40 @@ class FilepondFrontendWidget extends Widget implements UploadableWidgetInterface
                 }
                 break;
 
-            case 'maxConnections':
+            case 'parallelUploads':
             case 'maxImageWidth':
             case 'maxImageHeight':
-            case 'imageResizeTargetWidth':
-            case 'imageResizeTargetHeight':
                 $this->arrConfiguration[$strKey] = (int) $varValue ?? 0;
                 break;
 
-            case 'allowImageResize':
+            case 'imgResizeBrowser':
                 if (true === $varValue) {
-                    if (!isset($this->arrConfiguration['imageResizeTargetWidth'])) {
-                        $this->arrConfiguration['imageResizeTargetWidth'] = 1500;
+                    if (!isset($this->arrConfiguration['imgResizeWidthBrowser'])) {
+                        $this->arrConfiguration['imgResizeWidthBrowser'] = 1500;
                     }
 
-                    if (!isset($this->arrConfiguration['imageResizeTargetHeight'])) {
-                        $this->arrConfiguration['imageResizeTargetHeight'] = 1500;
+                    if (!isset($this->arrConfiguration['imgResizeHeightBrowser'])) {
+                        $this->arrConfiguration['imgResizeHeightBrowser'] = 1500;
                     }
 
-                    if (!isset($this->arrConfiguration['imageResizeMode'])) {
-                        $this->arrConfiguration['imageResizeMode'] = 'contain';
+                    if (!isset($this->arrConfiguration['imgResizeModeBrowser'])) {
+                        $this->arrConfiguration['imgResizeModeBrowser'] = 'contain';
                     }
 
-                    if (!isset($this->arrConfiguration['imageResizeUpscale'])) {
-                        $this->arrConfiguration['imageResizeUpscale'] = false;
+                    if (!isset($this->arrConfiguration['imgResizeUpscaleBrowser'])) {
+                        $this->arrConfiguration['imgResizeUpscaleBrowser'] = false;
                     }
                 }
 
                 $this->arrConfiguration[$strKey] = (bool) $varValue;
                 break;
-            case 'imageResizeUpscale':
+
+            case 'chunkUploads':
+            case 'doNotOverwrite':
+            case 'useHomeDir':
+            case 'imgResizeUpscaleBrowser':
+            case 'imgResize':
+            case 'imgResizeBrowser':
             case 'storeFile':
             case 'addToDbafs':
             case 'directUpload':
@@ -145,6 +131,7 @@ class FilepondFrontendWidget extends Widget implements UploadableWidgetInterface
 
                 // Set the uploader limit to 1 if it's not multiple
                 if (!$varValue) {
+                    $this->arrConfiguration['mSize'] = 1;
                     $this->uploaderLimit = 1;
                 }
                 break;
@@ -213,9 +200,39 @@ class FilepondFrontendWidget extends Widget implements UploadableWidgetInterface
         return $this->uploaderConfig;
     }
 
+    public function getMaximumUploadSize(): int
+    {
+        return $this->getConfiguration()['maxlength'];
+    }
+
+    public function getMinimumUploadSize(): int
+    {
+        return $this->getConfiguration()['minlength'];
+    }
+
+    protected function setDefaultAttributes(array $attributes): void
+    {
+        $this->arrConfiguration['name'] = !empty($attributes['name']) ? (string) $attributes['name'] : 'Filepond';
+        $this->arrConfiguration['label'] = !empty($attributes['label']) ? (string) $attributes['label'] : 'Filepond';
+
+        // If no upload path is set, use the default tmp path
+        $this->arrConfiguration['uploadPath'] = empty($attributes['uploadPath']) ? System::getContainer()->getParameter('markocupic_contao_filepond_uploader.tmp_path') : (string) $attributes['uploadPath'];
+
+        // Upload field (multiple or single)
+        $this->arrConfiguration['mandatory'] = (bool) $attributes['mandatory'] ?? false;
+
+        // Set the uploader limit to 1 if it's not multiple
+        if (empty($this->arrConfiguration['multiple'])) {
+            $this->uploaderLimit = 1;
+        }
+
+        $this->blnSubmitInput = true;
+        $this->decodeEntities = true;
+    }
+
     /**
      * This will convert the transfer keys to absolute file paths,
-     * move the files to the destination directory and return the files array.
+     * move the files to the destination directory and return the $_FILES array.
      *
      * Example return:
      *
@@ -257,22 +274,12 @@ class FilepondFrontendWidget extends Widget implements UploadableWidgetInterface
         return $this->getWidgetHelper()->getFilesArray($this->strName, array_filter((array) $files), $this->storeFile);
     }
 
-    protected function setDefaultAttributes(): void
-    {
-        $this->decodeEntities = true;
-
-        // Set the uploader limit to 1 if it's not multiple
-        if (empty($this->arrConfiguration['multiple'])) {
-            $this->uploaderLimit = 1;
-        }
-    }
-
     protected function includeAssets(): void
     {
         $manager = $this->getAssetsManager();
 
-        $allowImageResize = $this->arrConfiguration['allowImageResize'] ?? false;
-        $assets = $manager->getFrontendAssets($allowImageResize);
+        $imgResizeBrowser = $this->arrConfiguration['imgResizeBrowser'] ?? false;
+        $assets = $manager->getFrontendAssets($imgResizeBrowser);
 
         $manager->includeAssets($assets);
     }

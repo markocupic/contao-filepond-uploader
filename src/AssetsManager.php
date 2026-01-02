@@ -46,31 +46,15 @@ readonly class AssetsManager
     /**
      * Get the frontend assets.
      */
-    public function getFrontendAssets($allowImageResize = false): array
+    public function getFrontendAssets($imgResizeBrowser = false): array
     {
         $assets = [];
 
         // CSS
         $assets[] = $this->packages->getUrl('frontend.css', 'markocupic_contao_filepond_uploader');
 
-        // Filepond plugins
-        $assets[] = $this->packages->getUrl('filepond-plugin-file-validate-size/dist/filepond-plugin-file-validate-size.js', 'markocupic_contao_filepond_uploader');
-        $assets[] = $this->packages->getUrl('filepond-plugin-file-validate-type/dist/filepond-plugin-file-validate-type.js', 'markocupic_contao_filepond_uploader');
-        $assets[] = $this->packages->getUrl('filepond-plugin-image-edit/dist/filepond-plugin-image-edit.js', 'markocupic_contao_filepond_uploader');
-        $assets[] = $this->packages->getUrl('filepond-plugin-image-exif-orientation/dist/filepond-plugin-image-exif-orientation.js', 'markocupic_contao_filepond_uploader');
-        $assets[] = $this->packages->getUrl('filepond-plugin-image-preview/dist/filepond-plugin-image-preview.js', 'markocupic_contao_filepond_uploader');
-        $assets[] = $this->packages->getUrl('filepond-plugin-image-validate-size/dist/filepond-plugin-image-validate-size.js', 'markocupic_contao_filepond_uploader');
-
-        if ($allowImageResize) {
-            // Image resize plugin
-            $assets[] = $this->packages->getUrl('filepond-plugin-image-resize/dist/filepond-plugin-image-resize.js', 'markocupic_contao_filepond_uploader');
-            $assets[] = $this->packages->getUrl('filepond-plugin-image-transform/dist/filepond-plugin-image-transform.js', 'markocupic_contao_filepond_uploader');
-        }
-
-        // Add the core library as the last one!
-        $assets[] = $this->packages->getUrl('filepond/dist/filepond.js', 'markocupic_contao_filepond_uploader');
-
-        $assets[] = $this->packages->getUrl('contao-filepond-plugin.js', 'markocupic_contao_filepond_uploader');
+        // Add the customized filepond script!
+        $assets[] = $this->packages->getUrl('frontend.js', 'markocupic_contao_filepond_uploader');
 
         return $assets;
     }

@@ -5,7 +5,7 @@
 ![Filepond](docs/filepond.png)
 
 This extension provides a file uploader widget for the Contao form generator.
-You can use **client side image resizing** and **chunking** for uploading large files.
+You can use **client side image resizing** and **chunkUploads** for uploading large files.
 
 ## Create the form widget from DCA
 
@@ -78,6 +78,7 @@ $form = new \Codefog\HasteBundle\Form\Form('MyFileUploadForm', 'POST');
 $form->addFormField('filepond', [
     'inputType' => filepondUploader,
     'eval'      => [
+        'label' => 'My Filepond Uploader',
         'mandatory' => true,
         'uploadFolder' => 'files/gallery', // Relative path to the target folder
         'multiple' => true, // Do allow multiple files beeing selected & uploaded.
@@ -87,19 +88,23 @@ $form->addFormField('filepond', [
         'addToDbafs' => true, // Add uploaded file to the database assisted filesystem (DBAFS)
         'minlength' => 1000000, // Minimum file size (bytes)
         'maxlength' => 10000000, // Maximum file size (bytes)
-        'chunking' => true, // Enable chunking (large files)
+        'chunkUploads' => true, // Enable chunkUploads (large files)
         'chunkSize' => 2000000, // Chunk size (bytes)
         'extensions' => 'jpg,jpeg,png', // Accepted extensions
-        'maxConnections' => 3, // Maximum number of simultaneous uploads
-         // Images
+        'parallelUploads' => 3, // Maximum number of simultaneous uploads
+         // Validate image resolution upon upload
         'minImageWidth' => 1000, // Minimum width for images (pixels)
-        'maxImageWidth' => 6000, // Maximum width for images (pixels)
-         // Client side image resizing
-        'allowImageResize' => true, // Allow client side image resizing
-        'imageResizeTargetWidth' => 1600, // Image will be resized client side to this width
-        'imageResizeTargetHeight' => 1600, // Image will be resized client side to this height
-        'imageResizeMode' => 'contain', // Use "contain", "force", "contain" -> https://pqina.nl/filepond/docs/api/plugins/image-resize/#properties
-        'imageResizeUpscale' => false, // Set to false to prevent upscaling of images smaller than the target size
+        'minImageHeight' => 1000, // Minimum height for images (pixels)
+        'maxImageWidth' => 2000, // Maximum width for images (pixels)
+        'maxImageHeight' => 2000, // Maximum width for images (pixels)
+        // Server side image resizing
+        'imgResize' => true, // Allow image resizing (server side)
+        'imgResizeWidth' => 1000 // Image will be resized server side to this width (pixels)
+        'imgResizeHeight' => 1000 // Image will be resized server side to this height (pixels)
+        // Client side image resizing
+        'imgResizeBrowser' => true, // Allow client side image resizing! 'imgResize' must be set to "true" as well!
+        'imgResizeModeBrowser' => 'contain', // Use "contain", "force", "contain" -> https://pqina.nl/filepond/docs/api/plugins/image-resize/#properties
+        'imgResizeUpscaleBrowser' => false, // Set to false to prevent upscaling of images smaller than the target size
     ],
 ]);
 ```

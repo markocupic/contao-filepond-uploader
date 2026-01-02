@@ -30,7 +30,8 @@
         "contao/easy-coding-standard": "^6.0",
         "phpstan/phpstan": "^2.1",
         "phpunit/phpunit": "^9.5",
-        "contao/test-case": "^5.3"
+        "contao/test-case": "^5.3",
+        "enshrined/svg-sanitize": "^0.22"
     },
     "autoload": {
         "psr-4": {

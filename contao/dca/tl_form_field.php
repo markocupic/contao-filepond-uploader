@@ -19,17 +19,20 @@ use Contao\CoreBundle\DataContainer\PaletteManipulator;
  */
 $GLOBALS['TL_DCA']['tl_form_field']['palettes']['filepondUploader'] = '
     {type_legend},type,name,label;
-    {fconfig_legend},mandatory,maxConnections,extensions,minlength,maxlength,multiple,chunking;
-    {image_config_legend},maxImageWidth,maxImageHeight,allowImageResize;
+    {fconfig_legend},mandatory,parallelUploads,extensions,multiple,chunkUploads;
     {store_legend:hide},storeFile,addToDbafs;
-    {expert_legend:hide},class,fSize
+    {filesize_legend},minlength,maxlength;
+    {image_config_legend},minImageWidth,minImageHeight,maxImageWidth,maxImageHeight;
+    {image_resize_legend},imgResize;
+    {expert_legend:hide},class
 ';
 
 /**
  * Subpalettes
  */
-$GLOBALS['TL_DCA']['tl_form_field']['subpalettes']['chunking'] = 'chunkSize';
-$GLOBALS['TL_DCA']['tl_form_field']['subpalettes']['allowImageResize'] = 'imageResizeTargetWidth,imageResizeTargetHeight,imageResizeMode,imageResizeUpscale';
+$GLOBALS['TL_DCA']['tl_form_field']['subpalettes']['chunkUploads'] = 'chunkSize';
+$GLOBALS['TL_DCA']['tl_form_field']['subpalettes']['imgResize'] = 'imgResizeWidth,imgResizeHeight,imgResizeBrowser';
+$GLOBALS['TL_DCA']['tl_form_field']['subpalettes']['imgResizeBrowser'] = 'imgResizeModeBrowser,imgResizeUpscaleBrowser';
 
 PaletteManipulator::create()
     ->addField('directUpload', 'storeFile')
@@ -38,21 +41,21 @@ PaletteManipulator::create()
 /**
  * Selectors
  */
-$GLOBALS['TL_DCA']['tl_form_field']['palettes']['__selector__'][] = 'chunking';
-$GLOBALS['TL_DCA']['tl_form_field']['palettes']['__selector__'][] = 'allowImageResize';
+$GLOBALS['TL_DCA']['tl_form_field']['palettes']['__selector__'][] = 'chunkUploads';
+$GLOBALS['TL_DCA']['tl_form_field']['palettes']['__selector__'][] = 'imgResize';
+$GLOBALS['TL_DCA']['tl_form_field']['palettes']['__selector__'][] = 'imgResizeBrowser';
 
 /**
  * Fields
  */
-$GLOBALS['TL_DCA']['tl_form_field']['fields']['maxConnections'] = [
-    'default'   => 3,
+$GLOBALS['TL_DCA']['tl_form_field']['fields']['parallelUploads'] = [
     'exclude'   => true,
     'inputType' => 'text',
-    'eval'      => ['rgxp' => 'natural', 'tl_class' => 'w50'],
-    'sql'       => "int(10) NOT NULL default '3'",
+    'eval'      => ['rgxp' => 'natural', 'maxlength' => 2, 'tl_class' => 'w50'],
+    'sql'       => "smallint(2) unsigned NOT NULL default 3",
 ];
 
-$GLOBALS['TL_DCA']['tl_form_field']['fields']['chunking'] = [
+$GLOBALS['TL_DCA']['tl_form_field']['fields']['chunkUploads'] = [
     'exclude'   => true,
     'inputType' => 'checkbox',
     'eval'      => ['tl_class' => 'clr m12', 'submitOnChange' => true],
@@ -60,11 +63,10 @@ $GLOBALS['TL_DCA']['tl_form_field']['fields']['chunking'] = [
 ];
 
 $GLOBALS['TL_DCA']['tl_form_field']['fields']['chunkSize'] = [
-    'default'   => 2000000,
     'exclude'   => true,
     'inputType' => 'text',
-    'eval'      => ['rgxp' => 'digit', 'tl_class' => 'w50'],
-    'sql'       => "varchar(16) NOT NULL default ''",
+    'eval'      => ['rgxp' => 'natural', 'maxlength' => 10, 'tl_class' => 'w50'],
+    'sql'       => "int(10) NOT NULL default 2000000",
 ];
 
 $GLOBALS['TL_DCA']['tl_form_field']['fields']['addToDbafs'] = [
@@ -81,7 +83,21 @@ $GLOBALS['TL_DCA']['tl_form_field']['fields']['directUpload'] = [
     'sql'       => ['type' => 'boolean', 'default' => false],
 ];
 
-$GLOBALS['TL_DCA']['tl_form_field']['fields']['allowImageResize'] = [
+$GLOBALS['TL_DCA']['tl_form_field']['fields']['minImageWidth'] = [
+    'exclude'   => true,
+    'inputType' => 'text',
+    'eval'      => ['mandatory' => true, 'rgxp' => 'natural', 'maxlength' => 5, 'tl_class' => 'w50'],
+    'sql'       => "smallint(5) unsigned NOT NULL default 0",
+];
+
+$GLOBALS['TL_DCA']['tl_form_field']['fields']['minImageHeight'] = [
+    'exclude'   => true,
+    'inputType' => 'text',
+    'eval'      => ['mandatory' => true, 'rgxp' => 'natural', 'maxlength' => 5, 'tl_class' => 'w50'],
+    'sql'       => "smallint(5) unsigned NOT NULL default 0",
+];
+
+$GLOBALS['TL_DCA']['tl_form_field']['fields']['imgResize'] = [
     'exclude'   => true,
     'filter'    => true,
     'inputType' => 'checkbox',
@@ -89,21 +105,29 @@ $GLOBALS['TL_DCA']['tl_form_field']['fields']['allowImageResize'] = [
     'sql'       => ['type' => 'boolean', 'default' => false],
 ];
 
-$GLOBALS['TL_DCA']['tl_form_field']['fields']['imageResizeTargetWidth'] = [
+$GLOBALS['TL_DCA']['tl_form_field']['fields']['imgResizeWidth'] = [
     'exclude'   => true,
     'inputType' => 'text',
-    'eval'      => ['mandatory' => true, 'rgxp' => 'digit', 'tl_class' => 'clr w33'],
-    'sql'       => "smallint(5) unsigned NOT NULL default 1500",
+    'eval'      => ['mandatory' => true, 'rgxp' => 'natural', 'maxlength' => 5, 'tl_class' => 'clr w33'],
+    'sql'       => "smallint(5) unsigned NOT NULL default 1200",
 ];
 
-$GLOBALS['TL_DCA']['tl_form_field']['fields']['imageResizeTargetHeight'] = [
+$GLOBALS['TL_DCA']['tl_form_field']['fields']['imgResizeHeight'] = [
     'exclude'   => true,
     'inputType' => 'text',
-    'eval'      => ['mandatory' => true, 'rgxp' => 'digit', 'tl_class' => 'w33'],
-    'sql'       => "smallint(5) unsigned NOT NULL default 1500",
+    'eval'      => ['mandatory' => true, 'rgxp' => 'natural', 'maxlength' => 5, 'tl_class' => 'w33'],
+    'sql'       => "smallint(5) unsigned NOT NULL default 1200",
 ];
 
-$GLOBALS['TL_DCA']['tl_form_field']['fields']['imageResizeMode'] = [
+$GLOBALS['TL_DCA']['tl_form_field']['fields']['imgResizeBrowser'] = [
+    'exclude'   => true,
+    'filter'    => true,
+    'inputType' => 'checkbox',
+    'eval'      => ['submitOnChange' => true, 'tl_class' => 'clr m12'],
+    'sql'       => ['type' => 'boolean', 'default' => false],
+];
+
+$GLOBALS['TL_DCA']['tl_form_field']['fields']['imgResizeModeBrowser'] = [
     'exclude'   => true,
     'inputType' => 'select',
     'options'   => ['force', 'cover', 'contain'],
@@ -111,7 +135,7 @@ $GLOBALS['TL_DCA']['tl_form_field']['fields']['imageResizeMode'] = [
     'sql'       => "varchar(255) NOT NULL default 'contain'",
 ];
 
-$GLOBALS['TL_DCA']['tl_form_field']['fields']['imageResizeUpscale'] = [
+$GLOBALS['TL_DCA']['tl_form_field']['fields']['imgResizeUpscaleBrowser'] = [
     'exclude'   => true,
     'filter'    => true,
     'inputType' => 'checkbox',
