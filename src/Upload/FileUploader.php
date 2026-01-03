@@ -18,7 +18,9 @@ use Contao\Dbafs;
 use Contao\FilesModel;
 use Contao\StringUtil;
 use Contao\Validator;
+use Markocupic\ContaoFilepondUploader\Upload\Exception\OverrideFileException;
 use Markocupic\ContaoFilepondUploader\UploaderConfig;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
@@ -30,9 +32,8 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 readonly class FileUploader
 {
     public function __construct(
+        private LoggerInterface|null $contaoFilesLogger,
         private Filesystem $filesystem,
-        #[Autowire('%markocupic_contao_filepond_uploader.tmp_path%')]
-        private string $uploadFolder,
         #[Autowire('%kernel.project_dir%')]
         private string $projectDir,
         #[Autowire('%markocupic_contao_filepond_uploader.tmp_path%')]
@@ -84,6 +85,10 @@ readonly class FileUploader
             $newFilePath = $this->moveTmpFile($tmpFilePath, $targetFolder, $config->isDoNotOverwriteEnabled());
             $relFilePath = Path::makeRelative($newFilePath, $this->projectDir);
 
+            // System log
+            $this->contaoFilesLogger?->info('File "'.basename($newFilePath).'" has been uploaded');
+
+            // Add to dbafs
             if ($config->isAddToDbafsEnabled() && Dbafs::shouldBeSynchronized($relFilePath)) {
                 $objModel = FilesModel::findByPath($relFilePath);
 
@@ -115,11 +120,11 @@ readonly class FileUploader
 
     private function getUploadFolder(string $transferKey): string
     {
-        if (Validator::isInsecurePath($this->uploadFolder)) {
-            throw new \InvalidArgumentException('Invalid target path '.$this->uploadFolder);
+        if (Validator::isInsecurePath($this->tmpPath)) {
+            throw new \InvalidArgumentException('Invalid target path '.$this->tmpPath);
         }
 
-        $uploadFolder = Path::join($this->projectDir, $this->uploadFolder, $transferKey);
+        $uploadFolder = Path::join($this->projectDir, $this->tmpPath, $transferKey);
 
         $this->filesystem->mkdir($uploadFolder, 0755);
 
@@ -152,16 +157,25 @@ readonly class FileUploader
 
         $this->filesystem->mkdir(\dirname($new));
 
-        // Try to rename the file (Will throw an exception if the file already exists).
-        $this->filesystem->rename($tempFilePath, $new);
+        // Delete the file if it already exists and overriding is allowed
+        if (!$doNotOverride && is_file($new)) {
+            $this->filesystem->remove($new);
+        }
+
+        try {
+            // Try to rename the file (Will throw an IOException if the file already exists).
+            $this->filesystem->rename($tempFilePath, $new);
+        } catch (\Exception $e) {
+            throw new OverrideFileException('File with same name already exists.', 'ERR.filepond_can_not_override_file_in_destination', [basename($new)]);
+        }
 
         // Set the default CHMOD
         $this->filesystem->chmod($new, 0666 & ~umask());
 
         // Delete the parent directory too!
-        // TL_ROOT/system/tmp/filepond_69506bcd96821_3c6dfd158e092ccb9e97c1fec850fb9532609937c6c445a677a2594df71a7722/my_file.jpg
-        if (str_contains(\dirname($tempFilePath), 'filepond_')) {
-            // $this->filesystem->remove(\dirname($tempFilePath));
+        // {project_dir}/system/tmp/filepond_69506bcd96821_3c6dfd158e092ccb9e97c1fec850fb9532609937c6c445a677a2594df71a7722/my_file.jpg
+        if (is_dir(\dirname($tempFilePath)) && str_starts_with(basename(\dirname($tempFilePath)), 'filepond_')) {
+            $this->filesystem->remove(\dirname($tempFilePath));
         }
 
         return $new;

@@ -14,7 +14,6 @@ declare(strict_types=1);
 
 namespace Markocupic\ContaoFilepondUploader\Tests;
 
-use Contao\Config as ContaoConfig;
 use Contao\CoreBundle\Csrf\ContaoCsrfTokenManager;
 use Contao\TestCase\ContaoTestCase;
 use Markocupic\ContaoFilepondUploader\ConfigGenerator;
@@ -43,19 +42,15 @@ class ConfigGeneratorTest extends ContaoTestCase
         $this->configGenerator = new ConfigGenerator(
             $this->csrfTokenManager,
             $this->security,
-            true, // Debug mode
         );
     }
 
     public function testGenerateFromWidgetAttributesWithBasicAttributes(): void
     {
-        ContaoConfig::set('uploadPath', 'default_upload_path');
-
         $attributes = [
             'extensions' => 'jpg,png',
             'multiple' => true,
             'mSize' => 5,
-            'debug' => true,
         ];
 
         $uploaderConfig = $this->configGenerator->generateFromWidgetAttributes($attributes);
@@ -64,16 +59,16 @@ class ConfigGeneratorTest extends ContaoTestCase
         $this->assertSame('.jpg,.png', $uploaderConfig->getExtensions());
         $this->assertTrue($uploaderConfig->isMultiple());
         $this->assertSame(5, $uploaderConfig->getFileLimit());
-        $this->assertTrue($uploaderConfig->isDebugEnabled());
-        $this->assertSame('default_upload_path', $uploaderConfig->getUploadFolder());
+        $this->assertSame('system/tmp', $uploaderConfig->getUploadFolder());
     }
 
     public function testGenerateFromWidgetAttributesWithImageAttributes(): void
     {
         $attributes = [
+            'imgResize' => true,
             'imgResizeBrowser' => true,
-            'imgResizeWidthBrowser' => 1920,
-            'imgResizeHeightBrowser' => 1080,
+            'imgResizeWidth' => 1920,
+            'imgResizeHeight' => 1080,
             'imgResizeModeBrowser' => 'cover',
             'imgResizeUpscaleBrowser' => true,
         ];
@@ -82,8 +77,8 @@ class ConfigGeneratorTest extends ContaoTestCase
 
         $this->assertInstanceOf(UploaderConfig::class, $uploaderConfig);
         $this->assertTrue($uploaderConfig->isBrowserImageResizingEnabled());
-        $this->assertSame(1920, $uploaderConfig->getBrowserImageResizeWidth());
-        $this->assertSame(1080, $uploaderConfig->getBrowserImageResizeHeight());
+        $this->assertSame(1920, $uploaderConfig->getImageResizeWidth());
+        $this->assertSame(1080, $uploaderConfig->getImageResizeHeight());
         $this->assertSame('cover', $uploaderConfig->getBrowserImageResizeMode());
         $this->assertTrue($uploaderConfig->isBrowserImageResizeUpscalingEnabled());
     }
@@ -116,14 +111,12 @@ class ConfigGeneratorTest extends ContaoTestCase
 
     public function testGenerateFromWidgetAttributesWithMissingUploadFolder(): void
     {
-        ContaoConfig::set('uploadPath', 'fallback_upload_path');
-
         $attributes = [];
 
         $uploaderConfig = $this->configGenerator->generateFromWidgetAttributes($attributes);
 
         $this->assertInstanceOf(UploaderConfig::class, $uploaderConfig);
-        $this->assertSame('fallback_upload_path', $uploaderConfig->getUploadFolder());
+        $this->assertSame('system/tmp', $uploaderConfig->getUploadFolder());
     }
 
     public function testGenerateFromWidgetAttributesWithLabels(): void
@@ -140,22 +133,6 @@ class ConfigGeneratorTest extends ContaoTestCase
         $this->assertArrayHasKey('filepond', $labels);
         $this->assertArrayHasKey('labelIdle', $labels['filepond']);
         $this->assertSame('Drag & Drop your files here', $labels['filepond']['labelIdle']);
-    }
-
-    public function testGenerateFromWidgetAttributesWithDebugDisabled(): void
-    {
-        $this->configGenerator = new ConfigGenerator(
-            $this->csrfTokenManager,
-            $this->security,
-            false, // Debug mode
-        );
-
-        $attributes = [];
-
-        $uploaderConfig = $this->configGenerator->generateFromWidgetAttributes($attributes);
-
-        $this->assertInstanceOf(UploaderConfig::class, $uploaderConfig);
-        $this->assertFalse($uploaderConfig->isDebugEnabled());
     }
 
     public function testGenerateFromWidgetAttributesWithDirectUploadEnabled(): void

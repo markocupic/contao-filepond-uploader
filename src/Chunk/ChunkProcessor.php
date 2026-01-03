@@ -119,36 +119,6 @@ class ChunkProcessor
     }
 
     /**
-     * Deletes old chunk directories (cleanup function).
-     *
-     * @param int $maxAge Maximum age in seconds (default: 24 hours)
-     */
-    public function cleanupOldChunks(int $maxAge = 86400): int
-    {
-        $cleaned = 0;
-        $dirs = glob($this->tempDir.'/chunks_*');
-
-        if (false === $dirs) {
-            return 0;
-        }
-
-        $now = time();
-
-        foreach ($dirs as $dir) {
-            if (is_dir($dir)) {
-                $mtime = filemtime($dir);
-
-                if ($now - $mtime > $maxAge) {
-                    $this->filesystem->remove($dir);
-                    ++$cleaned;
-                }
-            }
-        }
-
-        return $cleaned;
-    }
-
-    /**
      * Returns the temporary directory.
      */
     public function getTempDir(): string

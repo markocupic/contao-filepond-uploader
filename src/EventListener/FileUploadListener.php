@@ -15,12 +15,13 @@ declare(strict_types=1);
 namespace Markocupic\ContaoFilepondUploader\EventListener;
 
 use Markocupic\ContaoFilepondUploader\Event\FileUploadEvent;
+use Markocupic\ContaoFilepondUploader\Exception\FilepondExceptionNormalizer;
+use Markocupic\ContaoFilepondUploader\Exception\TranslatableExceptionInterface;
 use Markocupic\ContaoFilepondUploader\Image\ImageResizer;
 use Markocupic\ContaoFilepondUploader\Image\SvgSanitizer;
 use Markocupic\ContaoFilepondUploader\TransferKey;
 use Markocupic\ContaoFilepondUploader\Upload\FileUploader;
 use Markocupic\ContaoFilepondUploader\Validator\Exception\NoFileUploadedException;
-use Markocupic\ContaoFilepondUploader\Validator\Exception\TranslatableExceptionInterface;
 use Markocupic\ContaoFilepondUploader\Validator\FileValidator;
 use Markocupic\ContaoFilepondUploader\Validator\ImageValidator;
 use Psr\Log\LoggerInterface;
@@ -36,6 +37,7 @@ readonly class FileUploadListener
     public function __construct(
         private FileUploader $fileUploader,
         private FileValidator $fileValidator,
+        private FilepondExceptionNormalizer $exceptionNormalizer,
         private ImageResizer $imageResizer,
         private ImageValidator $imageValidator,
         private SvgSanitizer $svgSanitizer,
@@ -50,8 +52,8 @@ readonly class FileUploadListener
     #[AsEventListener]
     public function onFileUpload(FileUploadEvent $event): void
     {
-        $widget = $event->getWidget();
         $request = $event->getRequest();
+        $widget = $event->getWidget();
         $files = $request->files->get($widget->name);
         $uploadConfig = $widget->getUploaderConfig();
 
@@ -91,7 +93,7 @@ readonly class FileUploadListener
                 'directUpload' => false,
             ];
 
-            if (empty($uploadResult) || empty($uploadResult['transferKey']) || empty($uploadResult['filePath'])) {
+            if (empty($uploadResult['transferKey']) || empty($uploadResult['filePath'])) {
                 throw new NoFileUploadedException('No file uploaded.', 'ERR.filepond_general_upload_error');
             }
 
@@ -107,29 +109,31 @@ readonly class FileUploadListener
                 $this->imageValidator->validateImageResolution($file->getRealPath(), $widget);
             }
 
+            // Store the file to the final destination if directUpload is enabled.
             if ($uploadConfig->isStoreFileEnabled() && $uploadConfig->isDirectUploadEnabled()) {
                 $pathOrUuid = $this->fileUploader->storeFile($uploadConfig, $file->getRealPath());
                 $uploadResult['filePath'] = $pathOrUuid;
                 $uploadResult['directUpload'] = true;
                 $uploadResult['transferKey'] = $pathOrUuid;
             }
-
-            if ($widget->hasErrors()) {
-                $error = $widget->getErrorAsString();
-            }
-        } catch (TranslatableExceptionInterface $e) {
-            $error = $this->translator->trans($e->getTranslatableText(), $e->getParams(), 'contao_default');
-            $this->contaoErrorLogger?->error($e->getMessage());
         } catch (\Throwable $e) {
-            if ($this->debug) {
-                throw $e;
-            }
+            if ($this->exceptionNormalizer->supports($e) && $e instanceof TranslatableExceptionInterface) {
+                $error = $this->exceptionNormalizer->normalize($e)['error'];
+            } else {
+                if (!$e instanceof TranslatableExceptionInterface && $this->debug) {
+                    throw $e;
+                }
 
-            $error = $this->translator->trans('ERR.filepond_general_upload_error', [], 'contao_default');
+                $error = $this->translator->trans('ERR.filepond_general_upload_error', [], 'contao_default');
+            }
             $this->contaoErrorLogger?->error($e->getMessage());
         } finally {
             unset($_FILES[$widget->name]);
             $request->files->remove($widget->name);
+
+            if (!isset($error) && $widget->hasErrors()) {
+                $error = $widget->getErrorAsString();
+            }
 
             if (isset($error)) {
                 $event->setResponse(

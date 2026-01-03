@@ -46,7 +46,7 @@ readonly class AssetsManager
     /**
      * Get the frontend assets.
      */
-    public function getFrontendAssets($imgResizeBrowser = false): array
+    public function getFrontendAssets(): array
     {
         $assets = [];
 

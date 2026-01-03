@@ -244,6 +244,10 @@ export default class ContaoFilepond {
             allowMultiple: this.#allowMultiple,
             allowFileTypeValidation: true,
 
+            // Do not allow upload reverts if direct upload is enabled
+            allowRevert: !this.jsConfig.directUpload,
+            allowRemove: !this.jsConfig.directUpload,
+
             // Add callbacks
             oninit: () => {
                 this.#oninit();
@@ -330,9 +334,12 @@ export default class ContaoFilepond {
                         this.#displayError(itemId, err.message, error);
                     }
                 },
+                revert: (transferKey, load, error) => {
+                    this.#revertUpload(transferKey, load, error)
+                },
 
+                // Not implemented yet
                 fetch: null,
-                revert: null,
             },
             fileValidateTypeDetectType: (source, _type) => {
                 return new Promise((resolve, _reject) => {
@@ -434,15 +441,16 @@ export default class ContaoFilepond {
             const formData = new FormData();
             formData.append(fieldName, file, file.name);
             formData.append('REQUEST_TOKEN', this.jsConfig.csrfToken);
-            formData.append('action', 'filepond_upload');
             formData.append('filePondItemId', itemId);
             formData.append('fileChecksum', fileChecksum);
 
+            // Fetch does not support progress events...
             const request = new XMLHttpRequest();
             request.open('POST', window.location.href);
 
             request.setRequestHeader('Accept', 'application/json');
             request.setRequestHeader('name', this.name);
+            request.setRequestHeader('action', 'filepond_upload');
             request.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
             request.setRequestHeader('filePondItemId', itemId);
 
@@ -497,7 +505,6 @@ export default class ContaoFilepond {
 
             const formData = new FormData();
             formData.append('REQUEST_TOKEN', this.jsConfig.csrfToken);
-            formData.append('action', 'filepond_upload_chunk');
             formData.append(fieldName.replace(/\[\]$/, '') + '_chunk', chunk);
             formData.append('fileChecksum', fileChecksum);
             formData.append('fileName', file.name);
@@ -514,6 +521,7 @@ export default class ContaoFilepond {
                     headers: {
                         'Accept': 'application/json',
                         'name': this.name,
+                        'action': 'filepond_upload_chunk',
                         'X-Requested-With': 'XMLHttpRequest',
                         'filePondItemId': itemId
                     },
@@ -585,6 +593,32 @@ export default class ContaoFilepond {
                 abort();
             }
         };
+    }
+
+    async #revertUpload(transferKey, load, error) {
+        try {
+            const response = await fetch(window.location.href, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'text/plain',
+                    'name': this.name,
+                    'action': 'filepond_upload_revert',
+                    'accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: transferKey
+            });
+
+            if (!response.ok) {
+                throw new Error('Revert failed');
+            }
+
+            // MUST be called with no arguments
+            load();
+
+        } catch (err) {
+            error('Could not revert file.');
+        }
     }
 
     async #sha256(buffer) {

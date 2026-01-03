@@ -18,6 +18,7 @@ use Contao\CoreBundle\Routing\ScopeMatcher;
 use Contao\Widget;
 use Markocupic\ContaoFilepondUploader\Event\ChunkUploadEvent;
 use Markocupic\ContaoFilepondUploader\Event\FileUploadEvent;
+use Markocupic\ContaoFilepondUploader\Event\UploadRevertEvent;
 use Markocupic\ContaoFilepondUploader\Widget\FilepondFrontendWidget;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
@@ -35,6 +36,7 @@ readonly class FrontendHandler
     private const ACTIONS = [
         'FILEPOND_UPLOAD' => 'filepond_upload',
         'FILEPOND_UPLOAD_CHUNK' => 'filepond_upload_chunk',
+        'FILEPOND_UPLOAD_REVERT' => 'filepond_upload_revert',
     ];
 
     public function __construct(
@@ -67,9 +69,20 @@ readonly class FrontendHandler
             $this->validateRequest($request);
 
             $action = $this->getAction($request);
+
+            if ($action === self::ACTIONS['FILEPOND_UPLOAD']) {
+                // Do some additional validation for upload requests
+                $this->validateFileUploadRequest($request, $widget);
+            }
+
             if ($action === self::ACTIONS['FILEPOND_UPLOAD_CHUNK']) {
                 // Do some additional validation for chunk requests
                 $this->validateChunkRequest($request, $widget);
+            }
+
+            if ($action === self::ACTIONS['FILEPOND_UPLOAD_REVERT']) {
+                // Do some additional validation for chunk requests
+                $this->validateUploadRevertRequest($request, $widget);
             }
         } catch (\Exception $e) {
             if ($this->debug) {
@@ -109,6 +122,13 @@ readonly class FrontendHandler
             return $event->getResponse();
         }
 
+        if ($action === self::ACTIONS['FILEPOND_UPLOAD_REVERT']) {
+            $event = new UploadRevertEvent($request, new JsonResponse(), $widget, $request->getContent());
+            $eventDispatcher->dispatch($event);
+
+            return $event->getResponse();
+        }
+
         throw new \RuntimeException('Invalid action submitted!');
     }
 
@@ -121,18 +141,27 @@ readonly class FrontendHandler
             throw new \RuntimeException('This method can be executed only in the frontend scope');
         }
 
+        $action = $this->getAction($request);
+
+        if (!\in_array($action, self::ACTIONS, true)) {
+            throw new BadRequestHttpException('Request header must contain a valid action attribute!');
+        }
+    }
+
+    private function validateFileUploadRequest(Request $request, Widget $widget): void
+    {
+        $action = $this->getAction($request);
+
+        if (self::ACTIONS['FILEPOND_UPLOAD'] !== $action) {
+            throw new BadRequestHttpException('Request header must contain a valid action attribute!');
+        }
+
         if (!$request->headers->has('filePondItemId')) {
             throw new BadRequestHttpException('Required header "filePondItemId" is missing.');
         }
 
         if (!$request->isMethod(Request::METHOD_POST)) {
             throw new BadRequestHttpException('Request method must POST.');
-        }
-
-        $action = $this->getAction($request);
-
-        if (!\in_array($action, self::ACTIONS, true)) {
-            throw new BadRequestHttpException('Invalid $_POST["action"] value submitted!');
         }
     }
 
@@ -144,7 +173,15 @@ readonly class FrontendHandler
         $action = $this->getAction($request);
 
         if (self::ACTIONS['FILEPOND_UPLOAD_CHUNK'] !== $action) {
-            throw new BadRequestHttpException('Invalid $_POST["action"] value submitted!');
+            throw new BadRequestHttpException('Request header must contain a valid action attribute!');
+        }
+
+        if (!$request->headers->has('filePondItemId')) {
+            throw new BadRequestHttpException('Required header "filePondItemId" is missing.');
+        }
+
+        if (!$request->isMethod(Request::METHOD_POST)) {
+            throw new BadRequestHttpException('Request method must POST.');
         }
 
         $post = ['fileName', 'offset', 'totalSize'];
@@ -162,8 +199,24 @@ readonly class FrontendHandler
         }
     }
 
+    /**
+     * Validate the request.
+     */
+    private function validateUploadRevertRequest(Request $request, Widget $widget): void
+    {
+        $action = $this->getAction($request);
+
+        if (self::ACTIONS['FILEPOND_UPLOAD_REVERT'] !== $action) {
+            throw new BadRequestHttpException('Request header must contain a valid action attribute!');
+        }
+
+        if (!$request->isMethod('DELETE')) {
+            throw new BadRequestHttpException('Request method must DELETE.');
+        }
+    }
+
     private function getAction(Request $request): string
     {
-        return $request->request->get('action');
+        return $request->headers->get('action');
     }
 }

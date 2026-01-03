@@ -93,15 +93,9 @@ class FilepondFrontendWidget extends Widget implements UploadableWidgetInterface
                 break;
 
             case 'imgResizeBrowser':
-                if (true === $varValue) {
-                    if (!isset($this->arrConfiguration['imgResizeWidthBrowser'])) {
-                        $this->arrConfiguration['imgResizeWidthBrowser'] = 1500;
-                    }
+                $this->arrConfiguration[$strKey] = (bool) $varValue;
 
-                    if (!isset($this->arrConfiguration['imgResizeHeightBrowser'])) {
-                        $this->arrConfiguration['imgResizeHeightBrowser'] = 1500;
-                    }
-
+                if (true === ((bool) $varValue)) {
                     if (!isset($this->arrConfiguration['imgResizeModeBrowser'])) {
                         $this->arrConfiguration['imgResizeModeBrowser'] = 'contain';
                     }
@@ -111,7 +105,6 @@ class FilepondFrontendWidget extends Widget implements UploadableWidgetInterface
                     }
                 }
 
-                $this->arrConfiguration[$strKey] = (bool) $varValue;
                 break;
 
             case 'chunkUploads':
@@ -119,7 +112,6 @@ class FilepondFrontendWidget extends Widget implements UploadableWidgetInterface
             case 'useHomeDir':
             case 'imgResizeUpscaleBrowser':
             case 'imgResize':
-            case 'imgResizeBrowser':
             case 'storeFile':
             case 'addToDbafs':
             case 'directUpload':
@@ -153,11 +145,6 @@ class FilepondFrontendWidget extends Widget implements UploadableWidgetInterface
         }
     }
 
-    public function getRequest(): Request
-    {
-        return $this->container->get('request_stack')->getCurrentRequest();
-    }
-
     /**
      * Parse the template file and return it as string.
      */
@@ -168,14 +155,6 @@ class FilepondFrontendWidget extends Widget implements UploadableWidgetInterface
         }
 
         return parent::parse($arrAttributes);
-    }
-
-    /**
-     * Get the widget configuration.
-     */
-    public function getConfiguration(): array
-    {
-        return $this->arrConfiguration;
     }
 
     /**
@@ -194,20 +173,10 @@ class FilepondFrontendWidget extends Widget implements UploadableWidgetInterface
     public function getUploaderConfig(): UploaderConfig
     {
         if (null === $this->uploaderConfig) {
-            $this->uploaderConfig = $this->getConfigGenerator()->generateFromWidgetAttributes($this->arrConfiguration);
+            return $this->getConfigGenerator()->generateFromWidgetAttributes($this->arrConfiguration);
         }
 
         return $this->uploaderConfig;
-    }
-
-    public function getMaximumUploadSize(): int
-    {
-        return $this->getConfiguration()['maxlength'] ?? 0;
-    }
-
-    public function getMinimumUploadSize(): int
-    {
-        return $this->getConfiguration()['minlength'] ?? 0;
     }
 
     protected function setDefaultAttributes(array $attributes): void
@@ -278,8 +247,7 @@ class FilepondFrontendWidget extends Widget implements UploadableWidgetInterface
     {
         $manager = $this->getAssetsManager();
 
-        $imgResizeBrowser = $this->arrConfiguration['imgResizeBrowser'] ?? false;
-        $assets = $manager->getFrontendAssets($imgResizeBrowser);
+        $assets = $manager->getFrontendAssets();
 
         $manager->includeAssets($assets);
     }
@@ -306,5 +274,10 @@ class FilepondFrontendWidget extends Widget implements UploadableWidgetInterface
     protected function getAssetsManager(): AssetsManager
     {
         return $this->container->get(AssetsManager::class);
+    }
+
+    private function getRequest(): Request
+    {
+        return $this->container->get('request_stack')->getCurrentRequest();
     }
 }

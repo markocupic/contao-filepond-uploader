@@ -1,0 +1,1 @@
+export function formatFileSize(t,e=1){if(!Number.isFinite(t)||t<0)return"0 B";if(0===t)return"0 B";const o=Math.floor(Math.log(t)/Math.log(1e3));return`${(t/Math.pow(1e3,o)).toFixed(e)} ${["B","KB","MB","GB","TB"][o]}`}

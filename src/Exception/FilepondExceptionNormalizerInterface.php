@@ -12,11 +12,11 @@ declare(strict_types=1);
  * @link https://github.com/markocupic/contao-filepond-uploader
  */
 
-namespace Markocupic\ContaoFilepondUploader\Validator\Exception;
+namespace Markocupic\ContaoFilepondUploader\Exception;
 
-use Markocupic\ContaoFilepondUploader\Exception\AbstractTranslatedException;
-use Markocupic\ContaoFilepondUploader\Exception\TranslatableExceptionInterface;
-
-class InvalidImageResolutionException extends AbstractTranslatedException implements TranslatableExceptionInterface
+interface FilepondExceptionNormalizerInterface
 {
+    public function supports(\Throwable $exception): bool;
+
+    public function normalize(\Throwable $exception): array;
 }

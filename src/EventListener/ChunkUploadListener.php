@@ -16,11 +16,12 @@ namespace Markocupic\ContaoFilepondUploader\EventListener;
 
 use Markocupic\ContaoFilepondUploader\Chunk\ChunkProcessor;
 use Markocupic\ContaoFilepondUploader\Event\ChunkUploadEvent;
+use Markocupic\ContaoFilepondUploader\Exception\FilepondExceptionNormalizer;
+use Markocupic\ContaoFilepondUploader\Exception\TranslatableExceptionInterface;
 use Markocupic\ContaoFilepondUploader\Image\ImageResizer;
 use Markocupic\ContaoFilepondUploader\Image\SvgSanitizer;
 use Markocupic\ContaoFilepondUploader\Upload\FileUploader;
 use Markocupic\ContaoFilepondUploader\Validator\Exception\NoFileUploadedException;
-use Markocupic\ContaoFilepondUploader\Validator\Exception\TranslatableExceptionInterface;
 use Markocupic\ContaoFilepondUploader\Validator\FileValidator;
 use Markocupic\ContaoFilepondUploader\Validator\ImageValidator;
 use Psr\Log\LoggerInterface;
@@ -33,6 +34,7 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 readonly class ChunkUploadListener
 {
     public function __construct(
+        private FilepondExceptionNormalizer $exceptionNormalizer,
         private ChunkProcessor $chunkProcessor,
         private FileUploader $fileUploader,
         private FileValidator $fileValidator,
@@ -49,9 +51,10 @@ readonly class ChunkUploadListener
     #[AsEventListener]
     public function onChunkUpload(ChunkUploadEvent $event): void
     {
-        $this->chunkProcessor->cleanupOldChunks();
-
+        $request = $event->getRequest();
         $file = $event->getChunkFile();
+        $widget = $event->getWidget();
+        $uploadConfig = $widget->getUploaderConfig();
 
         $uploadResult = $this->chunkProcessor->processChunk($file, $event->getWidget(), $event->getFileName(), $event->getFilePondItemId(), $event->getOffset(), $event->getTotalSize());
 
@@ -70,12 +73,6 @@ readonly class ChunkUploadListener
 
             return;
         }
-
-        $widget = $event->getWidget();
-
-        $uploadConfig = $widget->getUploaderConfig();
-
-        $request = $event->getRequest();
 
         /** @var File $file */
         $file = $uploadResult['file'];
@@ -106,26 +103,29 @@ readonly class ChunkUploadListener
                 $this->imageValidator->validateImageResolution($file->getRealPath(), $widget);
             }
 
+            // Store the file to the final destination if directUpload is enabled.
             if ($uploadConfig->isStoreFileEnabled() && $uploadConfig->isDirectUploadEnabled()) {
                 $pathOrUuid = $this->fileUploader->storeFile($uploadConfig, $file->getRealPath());
                 $uploadResult['transferKey'] = $pathOrUuid;
             }
-            if ($widget->hasErrors()) {
-                $error = $widget->getErrorAsString();
-            }
-        } catch (TranslatableExceptionInterface $e) {
-            $error = $this->translator->trans($e->getTranslatableText(), $e->getParams(), 'contao_default');
-            $this->contaoErrorLogger?->error($e->getMessage());
         } catch (\Throwable $e) {
-            if ($this->debug) {
-                throw $e;
-            }
+            if ($this->exceptionNormalizer->supports($e) && $e instanceof TranslatableExceptionInterface) {
+                $error = $this->exceptionNormalizer->normalize($e)['error'];
+            } else {
+                if (!$e instanceof TranslatableExceptionInterface && $this->debug) {
+                    throw $e;
+                }
 
-            $error = $this->translator->trans('ERR.filepond_general_upload_error', [], 'contao_default');
+                $error = $this->translator->trans('ERR.filepond_general_upload_error', [], 'contao_default');
+            }
             $this->contaoErrorLogger?->error($e->getMessage());
         } finally {
             unset($_FILES[$widget->name.'_chunk']);
             $request->files->remove($widget->name.'_chunk');
+
+            if (!isset($error) && $widget->hasErrors()) {
+                $error = $widget->getErrorAsString();
+            }
 
             if (isset($error)) {
                 $event->setResponse(

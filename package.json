@@ -5,7 +5,8 @@
         "url": "git+github.com/markocupic/contao-filepond-uploader"
     },
     "scripts": {
-        "build": "encore production"
+        "build": "encore production",
+        "watch": "encore dev --watch"
     },
     "license": "MIT",
     "dependencies": {

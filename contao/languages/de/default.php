@@ -17,6 +17,10 @@ $GLOBALS['TL_LANG']['ERR']['filepond_file_minsize'] = 'Datei ist zu klein. Die M
 $GLOBALS['TL_LANG']['ERR']['filepond_file_minwidth'] = 'Datei %s benötigt eine Mindestbreite von %d Pixel!';
 $GLOBALS['TL_LANG']['ERR']['filepond_general_upload_error'] = 'Beim Versuch die Datei hochzuladen ist es zu einem unbekannten Fehler gekommen.';
 $GLOBALS['TL_LANG']['ERR']['filepond_nofileuploaded'] = 'Es wurde keine Datei hochgeladen.';
+$GLOBALS['TL_LANG']['ERR']['filepond_can_not_override_file_in_destination'] = 'Im Zielverzeichnis existiert bereits eine Datei mit dem Namen "%s".';
+$GLOBALS['TL_LANG']['ERR']['filepond_invalid_transfer_key'] = 'Es wurde ein ungültiger Transfer-Key übermittelt.';
+$GLOBALS['TL_LANG']['ERR']['filepond_uploaded_temp_resource_not_found'] = 'Die hochgeladene Datei wurde bereits gelöscht oder ist verschoben worden.';
+$GLOBALS['TL_LANG']['ERR']['filepond_general_upload_revert_error'] = 'Beim Versuch die Datei vom Server zu löschen, ist es zu einem unerwarteten Fehler gekommen.';
 
 // Filepond
 $GLOBALS['TL_LANG']['MSC']['filepond_trans_labelIdle'] = '<span class=\"filepond--label-action\">Hier klicken</span> oder Dateien ablegen';
@@ -67,5 +71,5 @@ $GLOBALS['TL_LANG']['MSC']['filepond_trans_labelMaxImageResolutionValidationErro
 $GLOBALS['TL_LANG']['MSC']['filepond_trans_labelImageValidateSizeLabelFormatError'] = 'Bildtyp nicht unterstützt';
 
 // Custom Filepond Plugin: File validate size
-$GLOBALS['TL_LANG']['MSC']['filepond_trans_labelMaxFileSizeError'] = 'Die maximale Dateigröße wurde überschritten ({filesize} Bytes). Zulässig sind bis zu {maxFileSize} Bytes.';
-$GLOBALS['TL_LANG']['MSC']['filepond_trans_labelMinFileSizeError'] = 'Die minimale Dateigröße wurde nicht erreicht ({filesize} Bytes). Erforderlich sind mindestens {minFileSize} Bytes.';
+$GLOBALS['TL_LANG']['MSC']['filepond_trans_labelMaxFileSizeError'] = 'Die maximale Dateigröße wurde überschritten ({filesizeHuman}). Zulässig sind maximal {maxFileSizeHuman}.';
+$GLOBALS['TL_LANG']['MSC']['filepond_trans_labelMinFileSizeError'] = 'Die Dateigröße ist zu klein ({filesizeHuman}). Erforderlich sind mindestens {minFileSizeHuman}.';

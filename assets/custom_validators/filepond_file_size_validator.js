@@ -1,4 +1,5 @@
-// ResizeImageListener.js
+import { formatFileSize } from './../utils/filesize.js';
+
 export class FilepondFileSizeValidator {
     static tags = [
         {
@@ -7,29 +8,55 @@ export class FilepondFileSizeValidator {
         }
     ];
 
-    handle(event) {
+    async handle(event) {
         const file = event.file;
         const options = event.filepondOptions;
 
-        if (true !== options.allowFileSizeValidation ?? false) {
+        if (!options.allowFileSizeValidation) {
             return;
         }
 
         const minFileSize = Number(options.minFileSize) || 0;
         const maxFileSize = Number(options.maxFileSize) || 0;
 
-        if (maxFileSize && file.size > maxFileSize) {
-            const data = {'filesize': file.size, 'maxFileSize': maxFileSize};
-            const errMessage = options.labelMaxFileSizeError.replace(/\{(\w+)\}/g, (_, key) => data[key]);
+        const filesize = file.size;
+        const filesizeHuman = formatFileSize(filesize);
+        const maxFileSizeHuman = formatFileSize(maxFileSize);
+        const minFileSizeHuman = formatFileSize(minFileSize);
 
-            throw new Error(errMessage);
+        // Max file size
+        if (maxFileSize && filesize > maxFileSize) {
+            const data = {
+                filesize,
+                filesizeHuman,
+                maxFileSize,
+                maxFileSizeHuman,
+            };
+
+            const message = options.labelMaxFileSizeError.replace(
+                /\{(\w+)\}/g,
+                (_, key) => data[key] ?? `{${key}}`
+            );
+
+            throw new Error(message);
         }
 
-        if (minFileSize && file.size < minFileSize) {
-            const data = {'filesize': file.size, 'minFileSize': minFileSize};
-            const errMessage = options.labelMinFileSizeError.replace(/\{(\w+)\}/g, (_, key) => data[key]);
+        // Min file size
+        if (minFileSize && filesize < minFileSize) {
+            const data = {
+                filesize,
+                filesizeHuman,
+                minFileSize,
+                minFileSizeHuman,
+            };
 
-            throw new Error(errMessage);
+            const message = options.labelMinFileSizeError.replace(
+                /\{(\w+)\}/g,
+                (_, key) => data[key] ?? `{${key}}`
+            );
+
+            throw new Error(message);
         }
     }
 }
+

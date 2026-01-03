@@ -8,6 +8,12 @@ export class FilepondImageResolutionValidator {
 
     async handle(event) {
         const file = event.file;
+
+        // Skip non-images early
+        if (!this.isImage(file)) {
+            return;
+        }
+
         const options = event.filepondOptions;
 
         const minImageWidth = Number(event.jsConfig.minImageWidth) || 0;
@@ -19,16 +25,32 @@ export class FilepondImageResolutionValidator {
             throw new Error(options.labelImageValidateSizeLabelFormatError);
         }
 
-        const {width, height} = await this.loadImage(file);
+        // Load the image
+        let width, height;
 
+        try {
+            ({width, height} = await this.loadImage(file));
+        } catch (e) {
+            console.log(`Skip resolution validator: Could not load image from ${file.name}.`);
+            return;
+        }
+
+        // Skip if width or height is not a number
+        if (!Number.isFinite(width) || !Number.isFinite(height)) {
+            console.log(`Skip resolution validator: Invalid resolution for ${file.name}.`);
+            return;
+        }
+
+        // Min resolution
         if (width < minImageWidth || height < minImageHeight) {
-            const data = {width, height, minWidth: minImageWidth, minHeight: minImageHeight};
-            const msg = options.validateMinImageResolutionError.replace(/\{(\w+)\}/g, (_, k) => data[k]);
+            const data = {'width': width, 'height': height, 'minWidth': minImageWidth, 'minHeight': minImageHeight};
+            const msg = options.labelMinImageResolutionValidationError.replace(/\{(\w+)\}/g, (_, k) => data[k]);
             throw new Error(msg);
         }
 
-        if (width > maxImageWidth || height > maxImageHeight) {
-            const data = {width, height, maxWidth: maxImageWidth, maxHeight: maxImageHeight};
+        // Max resolution
+        if (maxImageWidth && (width > maxImageWidth || height > maxImageHeight)) {
+            const data = {'width': width, 'height': height, 'maxWidth': maxImageWidth, 'maxHeight': maxImageHeight};
             const msg = options.labelMaxImageResolutionValidationError.replace(/\{(\w+)\}/g, (_, k) => data[k]);
             throw new Error(msg);
         }
@@ -36,17 +58,28 @@ export class FilepondImageResolutionValidator {
 
     loadImage(file) {
         return new Promise((resolve, reject) => {
-            const reader = new FileReader();
             const img = new Image();
+            const url = URL.createObjectURL(file);
 
-            reader.onload = (e) => {
-                img.onload = () => resolve({width: img.width, height: img.height});
-                img.onerror = () => reject("Invalid image selected, can't extract resolution data from it.");
-                img.src = e.target.result;
+            img.onload = () => {
+                URL.revokeObjectURL(url);
+                resolve({width: img.naturalWidth, height: img.naturalHeight});
             };
 
-            reader.onerror = () => reject("FileReader failed to read the selected image file.");
-            reader.readAsDataURL(file);
+            img.onerror = () => {
+                URL.revokeObjectURL(url);
+                reject(new Error("Invalid image, cannot extract resolution."));
+            };
+
+            img.src = url;
         });
+    }
+
+    isImage(file) {
+        // MIME type OR extension fallback
+        return (
+            /^image\//.test(file.type) ||
+            /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(file.name)
+        );
     }
 }

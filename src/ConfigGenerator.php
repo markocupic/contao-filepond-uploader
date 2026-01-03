@@ -70,6 +70,7 @@ readonly class ConfigGenerator
             'minImageHeight' => $config->getMinImageHeight(),
             'maxImageHeight' => $config->getMaxImageHeight(),
             'imgResize' => $config->isImageResizingEnabled(),
+            'directUpload' => $config->isDirectUploadEnabled(),
         ];
 
         // Enable image resizing

@@ -86,14 +86,14 @@ $GLOBALS['TL_DCA']['tl_form_field']['fields']['directUpload'] = [
 $GLOBALS['TL_DCA']['tl_form_field']['fields']['minImageWidth'] = [
     'exclude'   => true,
     'inputType' => 'text',
-    'eval'      => ['mandatory' => true, 'rgxp' => 'natural', 'maxlength' => 5, 'tl_class' => 'w50'],
+    'eval'      => ['rgxp' => 'natural', 'maxlength' => 5, 'tl_class' => 'w50'],
     'sql'       => "smallint(5) unsigned NOT NULL default 0",
 ];
 
 $GLOBALS['TL_DCA']['tl_form_field']['fields']['minImageHeight'] = [
     'exclude'   => true,
     'inputType' => 'text',
-    'eval'      => ['mandatory' => true, 'rgxp' => 'natural', 'maxlength' => 5, 'tl_class' => 'w50'],
+    'eval'      => ['rgxp' => 'natural', 'maxlength' => 5, 'tl_class' => 'w50'],
     'sql'       => "smallint(5) unsigned NOT NULL default 0",
 ];
 

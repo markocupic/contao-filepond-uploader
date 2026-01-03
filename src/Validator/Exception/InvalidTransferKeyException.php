@@ -14,9 +14,9 @@ declare(strict_types=1);
 
 namespace Markocupic\ContaoFilepondUploader\Validator\Exception;
 
-interface TranslatableExceptionInterface
-{
-    public function getTranslatableText(): string;
+use Markocupic\ContaoFilepondUploader\Exception\AbstractTranslatedException;
+use Markocupic\ContaoFilepondUploader\Exception\TranslatableExceptionInterface;
 
-    public function getParams(): array;
+class InvalidTransferKeyException extends AbstractTranslatedException implements TranslatableExceptionInterface
+{
 }

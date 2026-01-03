@@ -17,6 +17,10 @@ $GLOBALS['TL_LANG']['ERR']['filepond_file_minsize'] = 'The file is too small. Th
 $GLOBALS['TL_LANG']['ERR']['filepond_file_minwidth'] = 'File %s must have a minimum width of %d pixels!';
 $GLOBALS['TL_LANG']['ERR']['filepond_general_upload_error'] = 'An unknown error occurred while trying to upload the file.';
 $GLOBALS['TL_LANG']['ERR']['filepond_nofileuploaded'] = 'No file was uploaded.';
+$GLOBALS['TL_LANG']['ERR']['filepond_can_not_override_file_in_destination'] = 'A file with the name "%s" already exists in the destination directory.';
+$GLOBALS['TL_LANG']['ERR']['filepond_invalid_transfer_key'] = 'An invalid transfer key was submitted.';
+$GLOBALS['TL_LANG']['ERR']['filepond_uploaded_temp_resource_not_found'] = 'The uploaded file has already been deleted or has been moved.';
+$GLOBALS['TL_LANG']['ERR']['filepond_general_upload_revert_error'] = 'An unexpected error occurred while attempting to delete the file from the server.';
 
 // Filepond
 $GLOBALS['TL_LANG']['MSC']['filepond_trans_labelIdle'] = 'Drag & Drop your files or <span class=\"filepond--label-action\">Browse</span>';
@@ -67,5 +71,5 @@ $GLOBALS['TL_LANG']['MSC']['filepond_trans_labelMinImageResolutionValidationErro
 $GLOBALS['TL_LANG']['MSC']['filepond_trans_labelMaxImageResolutionValidationError'] = 'The image resolution {width} x {height} is too large. The max. allowed resolution is {maxWidth} x {maxHeight}.';
 
 // Custom Filepond Plugin: File validate size
-$GLOBALS['TL_LANG']['MSC']['filepond_trans_labelMaxFileSizeError'] = 'The maximum file size has been exceeded ({filesize} bytes). Up to {maxFileSize} bytes are allowed.';
-$GLOBALS['TL_LANG']['MSC']['filepond_trans_labelMinFileSizeError'] = 'The minimum file size has not been reached ({filesize} bytes). At least {minFileSize} bytes are required.';
+$GLOBALS['TL_LANG']['MSC']['filepond_trans_labelMaxFileSizeError'] = 'The maximum file size has been exceeded ({filesizeHuman}). The maximum allowed is {maxFileSizeHuman}.';
+$GLOBALS['TL_LANG']['MSC']['filepond_trans_labelMinFileSizeError'] = 'The file size is too small ({filesizeHuman}). At least {minFileSizeHuman} are required.';

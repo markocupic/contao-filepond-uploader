@@ -35,19 +35,22 @@ readonly class FileValidator
 
     public function validateExtension(string $basename, FilepondFrontendWidget $widget): bool
     {
-        $config = $widget->getConfiguration();
+        $uploadConfig = $widget->getUploaderConfig();
 
-        $allowed = StringUtil::trimsplit(',', $config['extensions'] ?? '');
+        $extensions = $uploadConfig->getExtensions();
+        $allowed = StringUtil::trimsplit(',', $extensions);
         $allowed = array_unique(array_map('strtolower', $allowed));
 
         if (empty($allowed)) {
             return true;
         }
 
+        $allowed = array_map(static fn ($el) => ltrim($el, '.'), $allowed);
+
         $actual = strtolower(trim((string) pathinfo($basename, PATHINFO_EXTENSION)));
 
         if ('' === $actual || !\in_array($actual, $allowed, true)) {
-            throw new InvalidFileException('File invalid no extension.', 'ERR.extensionsOnly', [implode(', ', $allowed)]);
+            throw new InvalidFileException('File invalid no extension.', 'ERR.extensionsOnly', [implode('., ', $allowed)]);
         }
 
         return true;
@@ -55,7 +58,8 @@ readonly class FileValidator
 
     public function validateMaxFileSize(string $filePath, FilepondFrontendWidget $widget): bool
     {
-        $maxAllowed = $widget->getMaximumUploadSize();
+        $uploadConfig = $widget->getUploaderConfig();
+        $maxAllowed = $uploadConfig->getMaxFileSizeLimit();
 
         if ($maxAllowed <= 0) {
             return true;
@@ -79,7 +83,8 @@ readonly class FileValidator
 
     public function validateMinFileSize(string $filePath, FilepondFrontendWidget $widget): bool
     {
-        $minAllowed = $widget->getMinimumUploadSize();
+        $uploadConfig = $widget->getUploaderConfig();
+        $minAllowed = $uploadConfig->getMinFileSizeLimit();
 
         if ($minAllowed <= 0) {
             return true;

@@ -14,23 +14,9 @@ declare(strict_types=1);
 
 namespace Markocupic\ContaoFilepondUploader\Validator\Exception;
 
-class NoFileUploadedException extends \RuntimeException implements TranslatableExceptionInterface
+use Markocupic\ContaoFilepondUploader\Exception\AbstractTranslatedException;
+use Markocupic\ContaoFilepondUploader\Exception\TranslatableExceptionInterface;
+
+class NoFileUploadedException extends AbstractTranslatedException implements TranslatableExceptionInterface
 {
-    public function __construct(
-        string $reason,
-        private readonly string $translatableText,
-        private readonly array $params = [],
-    ) {
-        parent::__construct($reason);
-    }
-
-    public function getTranslatableText(): string
-    {
-        return $this->translatableText;
-    }
-
-    public function getParams(): array
-    {
-        return $this->params;
-    }
 }
