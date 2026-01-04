@@ -21,6 +21,7 @@ use Contao\FrontendUser;
 use Contao\Validator;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 #[Autoconfigure(public: true)]
@@ -29,6 +30,8 @@ readonly class ConfigGenerator
     public function __construct(
         private ContaoCsrfTokenManager $csrfTokenManager,
         private Security $security,
+        #[Autowire('%contao.upload_path%')]
+        private string $contaoUploadPath,
     ) {
     }
 
@@ -41,11 +44,6 @@ readonly class ConfigGenerator
 
         // Set the config from attributes
         $this->buildConfigurationFromAttributes($config, $attributes);
-
-        // Set the upload folder to the default one if not set yet
-        if (!$config->getUploadFolder()) {
-            $this->setUploadFolder($config, (string) Config::get('uploadPath'));
-        }
 
         $config->setLabels($this->generateLabels());
 
@@ -186,6 +184,10 @@ readonly class ConfigGenerator
      */
     private function setUploadFolder(UploaderConfig $config, string $folder = ''): void
     {
+        if ('' === $folder) {
+            $folder = $this->contaoUploadPath;
+        }
+
         // Will check if the folder is a valid string or binary UUID
         // and convert it to a relative path
         if (Validator::isUuid($folder)) {

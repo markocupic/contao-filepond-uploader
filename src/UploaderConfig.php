@@ -94,12 +94,12 @@ class UploaderConfig
     /**
      * Add to database file system.
      */
-    private bool $addToDbafs = false;
+    private bool $addToDbafs = true;
 
     /**
      * Upload folder.
      */
-    private string $uploadFolder = 'system/tmp';
+    private string $uploadFolder = 'files';
 
     /**
      * Labels.
@@ -495,7 +495,7 @@ class UploaderConfig
     /**
      * Set the upload folder.
      */
-    public function setUploadFolder(string $uploadFolder = ''): self
+    public function setUploadFolder(string $uploadFolder): self
     {
         $this->uploadFolder = $uploadFolder;
 
