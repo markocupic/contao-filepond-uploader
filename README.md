@@ -25,7 +25,6 @@ use Contao\CoreBundle\Controller\FrontendModule\AbstractFrontendModuleController
 use Contao\CoreBundle\DependencyInjection\Attribute\AsFrontendModule;
 use Contao\CoreBundle\Exception\RedirectResponseException;
 use Contao\CoreBundle\Twig\FragmentTemplate;
-use Contao\FilesModel;
 use Contao\ModuleModel;
 use Markocupic\ContaoFilepondUploader\Widget\FilepondFrontendWidget;
 use Symfony\Component\HttpFoundation\Request;
@@ -46,7 +45,6 @@ class ExampleController extends AbstractFrontendModuleController
 
         return $template->getResponse();
     }
-
     private function getForm(): Form
     {
         $form = new Form('MyFileUploadForm', 'POST');
@@ -54,9 +52,12 @@ class ExampleController extends AbstractFrontendModuleController
         $form->addFormField('filepond', [
             'inputType' => FilepondFrontendWidget::TYPE,
             'eval' => [
+                'extensions' => 'jpg,jpeg,png',
                 'mandatory' => true,
-                'uploadFolder' => $this->getContaoAdapter(FilesModel::class)->findByPath('files/filepond_test')->uuid,
+                'uploadFolder' => 'files/filepond_test', // If no upload folder ist set, the file will be stored in the Contao upload folder -> /files
                 'storeFile' => true,
+                'addToDbafs' => true,
+                'multiple' => true,
             ],
         ]);
 
