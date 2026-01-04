@@ -19,6 +19,7 @@ use Contao\FilesModel;
 use Contao\StringUtil;
 use Contao\Validator;
 use Markocupic\ContaoFilepondUploader\Upload\Exception\OverrideFileException;
+use Markocupic\ContaoFilepondUploader\Upload\Exception\UndefinedUploadFolderException;
 use Markocupic\ContaoFilepondUploader\UploaderConfig;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -71,6 +72,10 @@ readonly class FileUploader
 
         if (!is_file($tmpFilePath)) {
             throw new \Exception(\sprintf('The file "%s" does not exist', $tmpFilePath));
+        }
+
+        if ('' === $config->getUploadFolder()) {
+            throw new UndefinedUploadFolderException('Upload stopped! The upload folder is not defined.', 'ERR.filepond_upload_folder_not_defined');
         }
 
         // Move the temporary file

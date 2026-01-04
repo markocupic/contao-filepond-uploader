@@ -21,6 +21,7 @@ $GLOBALS['TL_LANG']['ERR']['filepond_can_not_override_file_in_destination'] = 'I
 $GLOBALS['TL_LANG']['ERR']['filepond_invalid_transfer_key'] = 'Es wurde ein ungültiger Transfer-Key übermittelt.';
 $GLOBALS['TL_LANG']['ERR']['filepond_uploaded_temp_resource_not_found'] = 'Die hochgeladene Datei wurde bereits gelöscht oder ist verschoben worden.';
 $GLOBALS['TL_LANG']['ERR']['filepond_general_upload_revert_error'] = 'Beim Versuch die Datei vom Server zu löschen, ist es zu einem unerwarteten Fehler gekommen.';
+$GLOBALS['TL_LANG']['ERR']['filepond_upload_folder_not_defined'] = 'Die Datei konnte nicht hochgeladen werden, da kein Zielordner konfiguriert wurde.';
 
 // Filepond
 $GLOBALS['TL_LANG']['MSC']['filepond_trans_labelIdle'] = '<span class=\"filepond--label-action\">Hier klicken</span> oder Dateien ablegen';
