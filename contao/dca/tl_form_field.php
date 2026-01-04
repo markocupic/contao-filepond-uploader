@@ -73,7 +73,7 @@ $GLOBALS['TL_DCA']['tl_form_field']['fields']['addToDbafs'] = [
     'exclude'   => true,
     'inputType' => 'checkbox',
     'eval'      => ['tl_class' => 'clr'],
-    'sql'       => ['type' => 'boolean', 'default' => false],
+    'sql'       => ['type' => 'boolean', 'default' => true],
 ];
 
 $GLOBALS['TL_DCA']['tl_form_field']['fields']['directUpload'] = [
