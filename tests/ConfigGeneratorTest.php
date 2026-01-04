@@ -59,7 +59,7 @@ class ConfigGeneratorTest extends ContaoTestCase
         $this->assertSame('.jpg,.png', $uploaderConfig->getExtensions());
         $this->assertTrue($uploaderConfig->isMultiple());
         $this->assertSame(5, $uploaderConfig->getFileLimit());
-        $this->assertSame('system/tmp', $uploaderConfig->getUploadFolder());
+        $this->assertSame('files', $uploaderConfig->getUploadFolder());
     }
 
     public function testGenerateFromWidgetAttributesWithImageAttributes(): void
@@ -116,7 +116,7 @@ class ConfigGeneratorTest extends ContaoTestCase
         $uploaderConfig = $this->configGenerator->generateFromWidgetAttributes($attributes);
 
         $this->assertInstanceOf(UploaderConfig::class, $uploaderConfig);
-        $this->assertSame('system/tmp', $uploaderConfig->getUploadFolder());
+        $this->assertSame('files', $uploaderConfig->getUploadFolder());
     }
 
     public function testGenerateFromWidgetAttributesWithLabels(): void
