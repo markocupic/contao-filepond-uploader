@@ -17,15 +17,12 @@ namespace Markocupic\ContaoFilepondUploader;
 use Markocupic\ContaoFilepondUploader\Upload\FileUploader;
 use Markocupic\ContaoFilepondUploader\Widget\FilepondFrontendWidget;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
 #[Autoconfigure(public: true)]
 readonly class Validator
 {
     public function __construct(
         private FileUploader $fileUploader,
-        #[Autowire('%kernel.project_dir%')]
-        private string $projectDir,
     ) {
     }
 
@@ -46,11 +43,6 @@ readonly class Validator
         }
 
         return $this->validateSingleFile($widget, $varInput);
-    }
-
-    public function isUuid(string $value): bool
-    {
-        return \Contao\Validator::isUuid($value);
     }
 
     /**
@@ -78,11 +70,10 @@ readonly class Validator
     private function validateSingleFile(FilepondFrontendWidget $widget, string $varInput): string
     {
         try {
+            // Store the file in the target folder
             // Returns the UUID of the uploaded file if addToDbafs is set to true,
             // otherwise the relative path to the uploaded file.
-            $pathOrUuid = $this->fileUploader->storeFile($widget->getUploaderConfig(), $varInput);
-
-            return base64_encode($pathOrUuid);
+            return $this->fileUploader->storeFile($widget->getUploaderConfig(), $varInput);
         } catch (\Exception $e) {
             $widget->addError($GLOBALS['TL_LANG']['ERR']['emptyUpload']);
         }
@@ -106,13 +97,12 @@ readonly class Validator
 
         $inputs = [];
 
-        // Store the files
-        foreach ($varInputs as $k => $splFileInfo) {
+        // Store the files in the target folder
+        foreach ($varInputs as $relPathOrUuid) {
             try {
                 // Returns the UUID of the uploaded file if addToDbafs is set to true,
                 // otherwise the relative path to the uploaded file.
-                $pathOrUuid = $this->fileUploader->storeFile($config, $splFileInfo);
-                $inputs[$k] = base64_encode($pathOrUuid);
+                $inputs[] = $this->fileUploader->storeFile($config, $relPathOrUuid);
             } catch (\Exception $e) {
                 $widget->addError($GLOBALS['TL_LANG']['ERR']['emptyUpload']);
             }

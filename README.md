@@ -2,7 +2,9 @@
 
 # [Filepond file uploader](https://pqina.nl/filepond) for Contao CMS
 
-![Filepond](docs/filepond.png)
+|                                 |                                 |
+|---------------------------------|---------------------------------|
+| ![Filepond](docs/frontend2.png) | ![Filepond](docs/frontend1.png) |
 
 This extension provides a file uploader widget for the Contao form generator.
 You can use **client side image resizing** and **chunkUploads** for uploading large files.
