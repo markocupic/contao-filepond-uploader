@@ -109,8 +109,6 @@ readonly class WidgetHelper
         $count = 0;
         $arrFiles = [];
 
-        $files = array_map('base64_decode', $files);
-
         foreach ($files as $file) {
             $model = null;
 

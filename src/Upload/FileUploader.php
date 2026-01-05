@@ -43,11 +43,11 @@ readonly class FileUploader
     }
 
     /**
-     * This will move the file from the tmp folder to system/tmp.
+     * This will move the file from the servers temp folder to system/tmp.
      */
     public function move(UploadedFile $file, string $transferKey): File
     {
-        $uploadFolder = $this->getUploadFolder($transferKey);
+        $uploadFolder = $this->getTempUploadFolder($transferKey);
         $fileName = $this->getSanitizedFilename($file->getClientOriginalName());
 
         $file = $file->move($uploadFolder, $fileName);
@@ -61,17 +61,19 @@ readonly class FileUploader
      * Store a single file to destination folder
      * and return either the relative path or the UUID.
      */
-    public function storeFile(UploaderConfig $config, string $tmpFilePath): string
+    public function storeFile(UploaderConfig $config, string $relPathOrUuid): string
     {
-        if (Validator::isUuid($tmpFilePath) && null !== FilesModel::findByUuid($tmpFilePath)) {
+        if (Validator::isUuid($relPathOrUuid) && null !== FilesModel::findByUuid($relPathOrUuid)) {
             // We return a UUID here, because the file was uploaded directly and added to dbafs.
-            return $tmpFilePath;
+            return $relPathOrUuid;
         }
 
-        $tmpFilePath = Path::makeAbsolute($tmpFilePath, $this->projectDir);
+        $relPath = $relPathOrUuid;
 
-        if (!is_file($tmpFilePath)) {
-            throw new \Exception(\sprintf('The file "%s" does not exist', $tmpFilePath));
+        $absPath = Path::makeAbsolute($relPath, $this->projectDir);
+
+        if (!is_file($absPath)) {
+            throw new \Exception(\sprintf('The file "%s" does not exist', $absPath));
         }
 
         if ('' === $config->getUploadFolder()) {
@@ -83,22 +85,23 @@ readonly class FileUploader
             $targetFolder = Path::makeAbsolute($config->getUploadFolder(), $this->projectDir);
 
             // The file was directly uploaded and not added to dbafs
-            if (str_starts_with($tmpFilePath, $targetFolder)) {
-                return Path::makeRelative($tmpFilePath, $this->projectDir);
+            if (str_starts_with($absPath, $targetFolder)) {
+                return $relPath;
             }
 
-            $newFilePath = $this->moveTmpFile($tmpFilePath, $targetFolder, $config->isDoNotOverwriteEnabled());
-            $relFilePath = Path::makeRelative($newFilePath, $this->projectDir);
+            // Move the temporary file to the target folder
+            $newAbsPath = $this->moveFromTempToTargetFolder($absPath, $targetFolder, $config->isDoNotOverwriteEnabled());
+            $newRelPath = Path::makeRelative($newAbsPath, $this->projectDir);
 
             // System log
-            $this->contaoFilesLogger?->info('File "'.basename($newFilePath).'" has been uploaded');
+            $this->contaoFilesLogger?->info('File "'.basename($newAbsPath).'" has been uploaded');
 
             // Add to dbafs
-            if ($config->isAddToDbafsEnabled() && Dbafs::shouldBeSynchronized($relFilePath)) {
-                $objModel = FilesModel::findByPath($relFilePath);
+            if ($config->isAddToDbafsEnabled() && Dbafs::shouldBeSynchronized($newRelPath)) {
+                $objModel = FilesModel::findByPath($newRelPath);
 
                 if (null === $objModel) {
-                    $objModel = Dbafs::addResource($relFilePath);
+                    $objModel = Dbafs::addResource($newRelPath);
 
                     if (null !== $objModel) {
                         $strUuid = StringUtil::binToUuid($objModel->uuid);
@@ -106,15 +109,15 @@ readonly class FileUploader
                 }
 
                 // Update the hash of the target folder
-                $uploadFolder = \dirname($relFilePath);
+                $uploadFolder = \dirname($newRelPath);
                 Dbafs::updateFolderHashes($uploadFolder);
             }
         }
 
         return match (true) {
             !empty($strUuid) => $strUuid,
-            !empty($relFilePath) => $relFilePath,
-            default => Path::makeRelative($tmpFilePath, $this->projectDir),
+            !empty($newRelPath) => $newRelPath,
+            default => '',
         };
     }
 
@@ -123,7 +126,7 @@ readonly class FileUploader
         return StringUtil::sanitizeFileName($filename);
     }
 
-    private function getUploadFolder(string $transferKey): string
+    private function getTempUploadFolder(string $transferKey): string
     {
         if (Validator::isInsecurePath($this->tmpPath)) {
             throw new \InvalidArgumentException('Invalid target path '.$this->tmpPath);
@@ -139,51 +142,52 @@ readonly class FileUploader
     /**
      * Move the temporary file to its final destination.
      *
-     * @param string $tempFilePath absolute path to the temporary file
-     * @param string $destination  absolute path to the destination folder
+     * @param string $absPath      absolute path to the temporary file
+     * @param string $targetFolder absolute path to the destination folder
      */
-    private function moveTmpFile(string $tempFilePath, string $destination, bool $doNotOverride = false): string
+    private function moveFromTempToTargetFolder(string $absPath, string $targetFolder, bool $doNotOverride = false): string
     {
-        if (!is_file($tempFilePath)) {
+        if (!is_file($absPath)) {
             return '';
         }
 
         // The file is not temporary
-        if (false === stripos($tempFilePath, Path::join($this->projectDir, $this->tmpPath))) {
-            return $tempFilePath;
+        if (false === stripos($absPath, Path::join($this->projectDir, $this->tmpPath))) {
+            return $absPath;
         }
 
-        $new = Path::join($destination, basename($tempFilePath));
+        $newAbsPath = Path::join($targetFolder, basename($absPath));
 
         // Do not overwrite existing files
         if ($doNotOverride) {
-            $new = Path::join($destination, $this->getUniqueFileName(basename($tempFilePath), $destination));
+            $newAbsPath = Path::join($targetFolder, $this->getUniqueFileName(basename($absPath), $targetFolder));
         }
 
-        $this->filesystem->mkdir(\dirname($new));
+        // Create the target folder
+        $this->filesystem->mkdir(\dirname($newAbsPath));
 
         // Delete the file if it already exists and overriding is allowed
-        if (!$doNotOverride && is_file($new)) {
-            $this->filesystem->remove($new);
+        if (!$doNotOverride && is_file($newAbsPath)) {
+            $this->filesystem->remove($newAbsPath);
         }
 
         try {
             // Try to rename the file (Will throw an IOException if the file already exists).
-            $this->filesystem->rename($tempFilePath, $new);
+            $this->filesystem->rename($absPath, $newAbsPath);
         } catch (\Exception $e) {
-            throw new OverrideFileException('File with same name already exists.', 'ERR.filepond_can_not_override_file_in_destination', [basename($new)]);
+            throw new OverrideFileException('File with same name already exists in the target folder.', 'ERR.filepond_can_not_override_file_in_destination', [basename($newAbsPath)]);
         }
 
         // Set the default CHMOD
-        $this->filesystem->chmod($new, 0666 & ~umask());
+        $this->filesystem->chmod($newAbsPath, 0666 & ~umask());
 
-        // Delete the parent directory too!
+        // Delete the temporary file and its parent directory too
         // {project_dir}/system/tmp/filepond_69506bcd96821_3c6dfd158e092ccb9e97c1fec850fb9532609937c6c445a677a2594df71a7722/my_file.jpg
-        if (is_dir(\dirname($tempFilePath)) && str_starts_with(basename(\dirname($tempFilePath)), 'filepond_')) {
-            $this->filesystem->remove(\dirname($tempFilePath));
+        if (is_dir(\dirname($absPath)) && str_starts_with(basename(\dirname($absPath)), 'filepond_')) {
+            $this->filesystem->remove(\dirname($absPath));
         }
 
-        return $new;
+        return $newAbsPath;
     }
 
     /**
@@ -192,9 +196,9 @@ readonly class FileUploader
      * it adds a numerical suffix (e.g. file__1.jpg, file__2.jpg)
      * to avoid naming conflicts.
      */
-    private function getUniqueFileName(string $basename, string $folder): string
+    private function getUniqueFileName(string $basename, string $targetFolder): string
     {
-        if (!is_file(Path::join($folder, $basename))) {
+        if (!is_file(Path::join($targetFolder, $basename))) {
             return $basename;
         }
 
@@ -204,7 +208,7 @@ readonly class FileUploader
         $extension = $pathInfo['extension'];
 
         // Uses the Symfony Finder to find all files in the target folder and convert their relative path names into an array.
-        $allFiles = iterator_to_array(Finder::create()->files()->in($folder)->getIterator());
+        $allFiles = iterator_to_array(Finder::create()->files()->in($targetFolder)->getIterator());
         $allFiles = array_map(static fn (SplFileInfo $fileInfo) => $fileInfo->getRelativePathname(), $allFiles);
 
         // Find the files with the same extension:
