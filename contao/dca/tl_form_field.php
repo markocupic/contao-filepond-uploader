@@ -20,7 +20,7 @@ use Contao\CoreBundle\DataContainer\PaletteManipulator;
 $GLOBALS['TL_DCA']['tl_form_field']['palettes']['filepondUploader'] = '
     {type_legend},type,name,label;
     {fconfig_legend},mandatory,parallelUploads,extensions,multiple,chunkUploads;
-    {store_legend:hide},storeFile,addToDbafs;
+    {store_legend:hide},storeFile;
     {filesize_legend},minlength,maxlength;
     {image_config_legend},minImageWidth,minImageHeight,maxImageWidth,maxImageHeight;
     {image_resize_legend},imgResize;
@@ -35,7 +35,7 @@ $GLOBALS['TL_DCA']['tl_form_field']['subpalettes']['imgResize'] = 'imgResizeWidt
 $GLOBALS['TL_DCA']['tl_form_field']['subpalettes']['imgResizeBrowser'] = 'imgResizeModeBrowser,imgResizeUpscaleBrowser';
 
 PaletteManipulator::create()
-    ->addField('directUpload', 'storeFile')
+    ->addField('addToDbafs,directUpload', 'storeFile')
     ->applyToSubpalette('storeFile', 'tl_form_field');
 
 /**
@@ -72,7 +72,7 @@ $GLOBALS['TL_DCA']['tl_form_field']['fields']['chunkSize'] = [
 $GLOBALS['TL_DCA']['tl_form_field']['fields']['addToDbafs'] = [
     'exclude'   => true,
     'inputType' => 'checkbox',
-    'eval'      => ['tl_class' => 'clr'],
+    'eval'      => ['tl_class' => 'w50'],
     'sql'       => ['type' => 'boolean', 'default' => true],
 ];
 
