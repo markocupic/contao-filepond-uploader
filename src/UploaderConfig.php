@@ -99,7 +99,7 @@ class UploaderConfig
     /**
      * Upload folder.
      */
-    private string $uploadFolder = 'files';
+    private string $uploadFolder = 'system/tmp';
 
     /**
      * Labels.

@@ -47,6 +47,7 @@ class ExampleController extends AbstractFrontendModuleController
 
         return $template->getResponse();
     }
+
     private function getForm(): Form
     {
         $form = new Form('MyFileUploadForm', 'POST');
@@ -56,7 +57,7 @@ class ExampleController extends AbstractFrontendModuleController
             'eval' => [
                 'extensions' => 'jpg,jpeg,png',
                 'mandatory' => true,
-                'uploadFolder' => 'files/filepond_test', // If no upload folder ist set, the file will be stored in the Contao upload folder -> /files
+                'uploadFolder' => 'files/filepond_test', // If no upload folder ist set, the file will be stored in the Contao upload folder -> /system/tmp
                 'storeFile' => true,
                 'addToDbafs' => true,
                 'multiple' => true,
