@@ -1,14 +1,14 @@
 {
-  "frontend.css": "/bundles/markocupiccontaofileponduploader/frontend.a9651f2f.css",
-  "frontend.js": "/bundles/markocupiccontaofileponduploader/frontend.552c3d6e.js",
+  "frontend.css": "/bundles/markocupiccontaofileponduploader/frontend.adbce4d7.css",
+  "frontend.js": "/bundles/markocupiccontaofileponduploader/frontend.cc10f031.js",
   "contao_filepond.js": "/bundles/markocupiccontaofileponduploader/contao_filepond.99c011a8.js",
   "filepond/locale/km-km.js": "/bundles/markocupiccontaofileponduploader/filepond/locale/km-km.af6ad1a1.js",
   "filepond/locale/el-el.js": "/bundles/markocupiccontaofileponduploader/filepond/locale/el-el.f834774c.js",
-  "filepond/locale/sr-rs": "/bundles/markocupiccontaofileponduploader/filepond/locale/sr-rs.406ad514.bin",
   "filepond/locale/am-et.js": "/bundles/markocupiccontaofileponduploader/filepond/locale/am-et.1983a44f.js",
   "filepond/locale/uk-ua.js": "/bundles/markocupiccontaofileponduploader/filepond/locale/uk-ua.eccf61fa.js",
   "filepond/locale/kur-ckb.js": "/bundles/markocupiccontaofileponduploader/filepond/locale/kur-ckb.79c19bab.js",
   "filepond/locale/ru-ru.js": "/bundles/markocupiccontaofileponduploader/filepond/locale/ru-ru.db4b1686.js",
+  "filepond/locale/sr-rs.js": "/bundles/markocupiccontaofileponduploader/filepond/locale/sr-rs.406ad514.js",
   "filepond/locale/ur-ur.js": "/bundles/markocupiccontaofileponduploader/filepond/locale/ur-ur.25e07a64.js",
   "filepond/locale/he-he.js": "/bundles/markocupiccontaofileponduploader/filepond/locale/he-he.06b7f587.js",
   "filepond/locale/ku-ckb.js": "/bundles/markocupiccontaofileponduploader/filepond/locale/ku-ckb.40153bd0.js",
@@ -55,6 +55,6 @@
   "listener_provider.js": "/bundles/markocupiccontaofileponduploader/listener_provider.6bd50cec.js",
   "utils/filesize.js": "/bundles/markocupiccontaofileponduploader/utils/filesize.b8786410.js",
   "contao_filepond_plugin.css": "/bundles/markocupiccontaofileponduploader/contao_filepond_plugin.ef45894a.css",
-  "frontend.a9651f2f.css.map": "/bundles/markocupiccontaofileponduploader/frontend.a9651f2f.css.map",
-  "frontend.552c3d6e.js.map": "/bundles/markocupiccontaofileponduploader/frontend.552c3d6e.js.map"
+  "frontend.adbce4d7.css.map": "/bundles/markocupiccontaofileponduploader/frontend.adbce4d7.css.map",
+  "frontend.cc10f031.js.map": "/bundles/markocupiccontaofileponduploader/frontend.cc10f031.js.map"
 }
