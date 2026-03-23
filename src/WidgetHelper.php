@@ -21,11 +21,13 @@ use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
+use Symfony\Component\Mime\MimeTypesInterface;
 
 #[Autoconfigure(public: true)]
 readonly class WidgetHelper
 {
     public function __construct(
+        private MimeTypesInterface $mimeTypes,
         private TransferKey $transferKey,
         #[Autowire('%kernel.project_dir%')]
         private string $projectDir,
@@ -134,7 +136,7 @@ readonly class WidgetHelper
 
             $arrFile = [
                 'name' => $file->getBasename(),
-                'type' => $file->getMTime(),
+                'type' => $this->mimeTypes->guessMimeType($file->getRealPath()) ?? $file->getType(),
                 'tmp_name' => $file->getRealPath(), // Must be absolute and inside the project directory
                 'error' => 0,
                 'size' => $file->getSize(),
@@ -143,7 +145,7 @@ readonly class WidgetHelper
 
             // Only set the 'uploaded' key if we store the file (https://github.com/contao/contao/pull/7039)
             if ($storeFile) {
-                $arrFile['uploaded'] = true;
+                $arrFile['uploaded'] = 1;
             }
 
             $arrFiles[$key] = $arrFile;
