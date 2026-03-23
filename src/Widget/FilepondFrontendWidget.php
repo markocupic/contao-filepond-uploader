@@ -239,7 +239,7 @@ class FilepondFrontendWidget extends Widget implements UploadableWidgetInterface
         // and return the UUIDs or relative paths if addToDbafs is set to false.
         $files = $this->container->get(Validator::class)->validateInput($this, $varInput);
 
-        // Returns a mock of the PHP $_FILES array that is used by Contao's Form instance.
+        // Returns a mock of the PHP $_FILES array used by Contao's Form instance.
         return $this->getWidgetHelper()->getFilesArray($this->strName, array_filter((array) $files), $this->storeFile);
     }
 
