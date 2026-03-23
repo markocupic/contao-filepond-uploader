@@ -76,12 +76,17 @@ readonly class FileUploader
             throw new \Exception(\sprintf('The file "%s" does not exist', $absPath));
         }
 
-        if ('' === $config->getUploadFolder()) {
-            throw new UndefinedUploadFolderException('Upload stopped! The upload folder is not defined.', 'ERR.filepond_upload_folder_not_defined');
+        // Return the absolute path if "storeFile" is disabled in the uploader config.
+        if (!$config->isStoreFileEnabled()) {
+            return $absPath;
         }
 
-        // Move the temporary file
-        if ($config->isStoreFileEnabled() && $config->getUploadFolder()) {
+        // Move the temporary file to the target folder if "storeFile" is enabled in the uploader config.
+        if ($config->getUploadFolder()) {
+            if ('' === $config->getUploadFolder()) {
+                throw new UndefinedUploadFolderException('Upload stopped! The upload folder is not defined.', 'ERR.filepond_upload_folder_not_defined');
+            }
+
             $targetFolder = Path::makeAbsolute($config->getUploadFolder(), $this->projectDir);
 
             // The file was directly uploaded and not added to dbafs
