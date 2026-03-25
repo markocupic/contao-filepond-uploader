@@ -73,7 +73,7 @@ readonly class FileUploader
         $absPath = Path::makeAbsolute($relPath, $this->projectDir);
 
         if (!is_file($absPath)) {
-            throw new \Exception(\sprintf('The file "%s" does not exist', $absPath));
+            throw new \Exception(\sprintf('The uploaded file "%s" does not exist', $absPath));
         }
 
         // Return the absolute path if "storeFile" is disabled in the uploader config.
@@ -81,42 +81,46 @@ readonly class FileUploader
             return $absPath;
         }
 
+        $uploadFolder = $config->getUploadFolder();
+
+        if ('' === $uploadFolder) {
+            throw new UndefinedUploadFolderException('Upload stopped! The upload folder is not defined.', 'ERR.filepond_upload_folder_not_defined');
+        }
+
         // Move the temporary file to the target folder if "storeFile" is enabled in the uploader config.
-        if ($config->getUploadFolder()) {
-            if ('' === $config->getUploadFolder()) {
-                throw new UndefinedUploadFolderException('Upload stopped! The upload folder is not defined.', 'ERR.filepond_upload_folder_not_defined');
-            }
+        $targetFolder = Path::makeAbsolute($uploadFolder, $this->projectDir);
 
-            $targetFolder = Path::makeAbsolute($config->getUploadFolder(), $this->projectDir);
+        if (!is_dir($targetFolder)) {
+            throw new \Exception(\sprintf('Upload stopped! The upload folder "%s" does not exist', $uploadFolder));
+        }
 
-            // The file was directly uploaded and not added to dbafs
-            if (str_starts_with($absPath, $targetFolder)) {
-                return $relPath;
-            }
+        // The file was directly uploaded and not added to dbafs
+        if (str_starts_with($absPath, $targetFolder)) {
+            return $relPath;
+        }
 
-            // Move the temporary file to the target folder
-            $newAbsPath = $this->moveFromTempToTargetFolder($absPath, $targetFolder, $config->isDoNotOverwriteEnabled());
-            $newRelPath = Path::makeRelative($newAbsPath, $this->projectDir);
+        // Move the temporary file to the target folder if "storeFile" is enabled in the uploader config.
+        $newAbsPath = $this->moveFromTempToTargetFolder($absPath, $targetFolder, $config->isDoNotOverwriteEnabled());
+        $newRelPath = Path::makeRelative($newAbsPath, $this->projectDir);
 
-            // System log
-            $this->contaoFilesLogger?->info('File "'.basename($newAbsPath).'" has been uploaded');
+        // System log
+        $this->contaoFilesLogger?->info('File "'.basename($newAbsPath).'" has been uploaded');
 
-            // Add to dbafs
-            if ($config->isAddToDbafsEnabled() && Dbafs::shouldBeSynchronized($newRelPath)) {
-                $objModel = FilesModel::findByPath($newRelPath);
+        // Add to dbafs
+        if ($config->isAddToDbafsEnabled() && Dbafs::shouldBeSynchronized($newRelPath)) {
+            $objModel = FilesModel::findByPath($newRelPath);
 
-                if (null === $objModel) {
-                    $objModel = Dbafs::addResource($newRelPath);
+            if (null === $objModel) {
+                $objModel = Dbafs::addResource($newRelPath);
 
-                    if (null !== $objModel) {
-                        $strUuid = StringUtil::binToUuid($objModel->uuid);
-                    }
+                if (null !== $objModel) {
+                    $strUuid = StringUtil::binToUuid($objModel->uuid);
                 }
-
-                // Update the hash of the target folder
-                $uploadFolder = \dirname($newRelPath);
-                Dbafs::updateFolderHashes($uploadFolder);
             }
+
+            // Update the hash of the target folder
+            $uploadFolder = \dirname($newRelPath);
+            Dbafs::updateFolderHashes($uploadFolder);
         }
 
         return match (true) {
