@@ -125,7 +125,7 @@ readonly class ConfigGenerator
             'labels' => static fn ($v) => $config->setLabels(array_merge($config->getLabels(), $v)),
             'imgResize' => static fn ($v) => true === $v ? $config->enableImageResizing() : $config->disableImageResizing(),
             'imgResizeBrowser' => static fn ($v) => true === $v ? $config->enableBrowserImageResizing() : $config->disableBrowserImageResizing(),
-            'uploadFolder' => fn ($v) => $this->setUploadFolder($config, $v),
+            'uploadFolder' => fn ($v) => $this->setUploadFolder($config, (string) $v),
             'useHomeDir' => fn ($v) => $this->applyHomeDirIfAllowed($config, $v),
         ];
 
