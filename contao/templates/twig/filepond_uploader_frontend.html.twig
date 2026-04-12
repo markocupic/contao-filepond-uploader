@@ -1,0 +1,40 @@
+{% extends '@Contao/form_row.html.twig' %}
+
+{% block label %}
+    {% if this.label %}
+        <label for="ctrl_{{ this.id }}"{% if this.class|default %} class="{{ this.class|default }}"{% endif %}>
+            {% if this.mandatory|default %}
+                <span class="invisible">{{ this.mandatoryField }} </span>{{ this.label|insert_tag_raw }}<span class="mandatory">*</span>
+            {% else %}
+                {{ this.label|insert_tag_raw }}
+            {% endif %}
+        </label>
+    {% endif %}
+{% endblock %}
+
+{% block field %}
+    {% if hasErrors.invoke() %}
+        <p class="error">{{ getErrorAsString.invoke() }}</p>
+    {% endif %}
+    {# Add stimulus controller attributes #}
+    <div{{ attrs()
+        .set('id',"filepond-widget-#{this.id}")
+        .set('data-controller','contao-filepond')
+        .set('data-contao-filepond-name-value', this.name)
+        .set('data-contao-filepond-config-value', this.jsConfig|json_encode)
+        .addClass('filepond-wrapper') }}>
+        <input{{ attrs()
+            .set('type', 'file')
+            .set('id', "ctrl_#{this.id}")
+            .addClass('filepond')
+            .addClass(this.class|default)
+            .set('aria-describedby', "help_ctrl_#{this.id}", this.help|default)
+            .set('data-allow-reorder', 'true')
+            .set('data-contao-filepond-target', 'input')
+            .mergeWith(getAttributes.invoke()) }}>
+    </div>
+
+    {% if this.help|default %}
+        <p class="help" id="help_ctrl_{{ this.id }}">{{ this.help|insert_tag_raw }}</p>
+    {% endif %}
+{% endblock %}
