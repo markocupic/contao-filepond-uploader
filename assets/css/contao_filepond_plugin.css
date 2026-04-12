@@ -1,3 +1,7 @@
+.filepond--drop-label, .filepond--drop-label label, .filepond--drop-label span {
+    cursor: pointer;
+}
+
 fieldset.filepond--file-wrapper {
     margin: 0 !important;
 }

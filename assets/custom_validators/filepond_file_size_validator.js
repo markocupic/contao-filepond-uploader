@@ -1,4 +1,4 @@
-import { formatFileSize } from './../utils/filesize.js';
+import { formatFileSize } from './../lib/filesize.js';
 
 export class FilepondFileSizeValidator {
     static tags = [

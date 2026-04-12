@@ -5,16 +5,10 @@ Encore
     .setPublicPath('/bundles/markocupiccontaofileponduploader')
     .setManifestKeyPrefix('')
 
-    .addEntry('frontend', './assets/filepond.js')
+    .addEntry('filepond', './assets/filepond.js')
 
     .copyFiles({
-        from: './assets',
-        to: '[path][name].[hash:8].[ext]'
-    })
-
-    .copyFiles({
-        from: './node_modules/filepond/locale',
-        to: 'filepond/locale/[path][name].[hash:8].[ext]'
+        from: './node_modules/filepond/locale', to: 'filepond/locale/[path][name].[hash:8].[ext]'
     })
 
     .disableSingleRuntimeChunk()
@@ -28,7 +22,6 @@ Encore
         config.corejs = 3;
     })
 
-    .enablePostCssLoader()
-;
+    .enablePostCssLoader();
 
 module.exports = Encore.getWebpackConfig();

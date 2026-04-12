@@ -1,11 +1,29 @@
-// Import core styles
-import 'filepond/dist/filepond.min.css';
+import {Application} from '@hotwired/stimulus';
+import {definitionForModuleAndIdentifier, identifierForContextKey} from '@hotwired/stimulus-webpack-helpers';
 
-// Import the plugin styles
-import '../assets/contao_filepond_plugin.css';
-import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css';
-import 'filepond-plugin-image-edit/dist/filepond-plugin-image-edit.css';
+// Start Stimulus
+const application = Application.start();
+application.debug = process.env.NODE_ENV === 'development';
 
-import ContaoFilepond from './contao_filepond.js';
+// Auto‑register all controllers in ./controllers
+const context = require.context(
+    '@symfony/stimulus-bridge/lazy-controller-loader!./controllers',
+    true,
+    /_controller\.[jt]sx?$/
+);
 
-window.ContaoFilepond = ContaoFilepond;
+application.load(
+    context.keys()
+        .map((key) => {
+            const identifier = identifierForContextKey(key);
+            if (!identifier) {
+                return null;
+            }
+
+            return definitionForModuleAndIdentifier(
+                context(key),
+                `${identifier}` // without a prefix
+            );
+        })
+        .filter(Boolean)
+);

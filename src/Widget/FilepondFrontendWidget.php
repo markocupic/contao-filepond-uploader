@@ -31,13 +31,13 @@ class FilepondFrontendWidget extends Widget implements UploadableWidgetInterface
 {
     public const TYPE = 'filepondUploader';
 
+    public array $jsConfig = [];
+
     protected ContainerInterface $container;
 
     protected UploaderConfig|null $uploaderConfig = null;
 
     protected int $uploaderLimit = 1;
-
-    protected array $jsConfig = [];
 
     protected $strTemplate = 'filepond_uploader_frontend';
 

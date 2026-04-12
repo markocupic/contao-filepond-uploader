@@ -50,11 +50,9 @@ readonly class AssetsManager
     {
         $assets = [];
 
-        // CSS
-        $assets[] = $this->packages->getUrl('frontend.css', 'markocupic_contao_filepond_uploader');
-
         // Add the customized filepond script!
-        $assets[] = $this->packages->getUrl('frontend.js', 'markocupic_contao_filepond_uploader');
+        $assets[] = $this->packages->getUrl('filepond.js', 'markocupic_contao_filepond_uploader');
+        $assets[] = $this->packages->getUrl('filepond.css', 'markocupic_contao_filepond_uploader');
 
         return $assets;
     }

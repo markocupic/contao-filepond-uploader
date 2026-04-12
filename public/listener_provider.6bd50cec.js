@@ -1,1 +1,0 @@
-export class ListenerProvider{constructor(){this.listeners=new Map}register(e,s,t=0){this.listeners.has(e)||this.listeners.set(e,[]),this.listeners.get(e).push({listener:s,priority:t}),this.listeners.get(e).sort((e,s)=>s.priority-e.priority)}getListeners(e){return(this.listeners.get(e)||[]).map(e=>e.listener)}}
