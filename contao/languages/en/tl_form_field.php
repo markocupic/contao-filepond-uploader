@@ -75,6 +75,10 @@ $GLOBALS['TL_LANG']['tl_form_field']['imgResizeModeBrowser'] = [
     'Image resize mode',
     'Choose between \'force\', \'cover\', or \'contain\'. Force will ignore the image aspect ratio. Cover will respect the aspect ratio and will scale to fill the target dimensions. Contain also respects the aspect ratio and will fit the image inside the set dimensions. All three settings will upscale images when they are smaller then the given target dimensions.',
 ];
+$GLOBALS['TL_LANG']['tl_form_field']['imgResizeQualityBrowser'] = [
+    'Image quality (1–100)',
+    'Here you can set the quality used to re-encode resized images in the browser (JPEG/WebP). Default: 85.',
+];
 $GLOBALS['TL_LANG']['tl_form_field']['imgResizeUpscaleBrowser'] = [
     'Upscale image width and height',
     'Deactivate the checkbox to prevent the upscaling of images that are smaller than the target size.',

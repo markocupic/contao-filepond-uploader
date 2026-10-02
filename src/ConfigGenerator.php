@@ -83,6 +83,7 @@ readonly class ConfigGenerator
         if ($config->isBrowserImageResizingEnabled() && $config->isImageResizingEnabled()) {
             $opt['imgResizeBrowser'] = true;
             $opt['imgResizeModeBrowser'] = $config->getBrowserImageResizeMode();
+            $opt['imgResizeQualityBrowser'] = $config->getBrowserImageResizeQuality();
             $opt['imgResizeUpscaleBrowser'] = $config->isBrowserImageResizeUpscalingEnabled();
         }
 
@@ -156,6 +157,10 @@ readonly class ConfigGenerator
 
             if ('imgResizeModeBrowser' === $key && true === ($attributes['imgResizeBrowser'] ?? false) && !empty($value)) {
                 $config->setBrowserImageResizeMode($value);
+            }
+
+            if ('imgResizeQualityBrowser' === $key && true === ($attributes['imgResizeBrowser'] ?? false) && (int) $value > 0) {
+                $config->setBrowserImageResizeQuality((int) $value);
             }
 
             if ('imgResizeUpscaleBrowser' === $key && true === ($attributes['imgResizeBrowser'] ?? false)) {

@@ -32,7 +32,7 @@ $GLOBALS['TL_DCA']['tl_form_field']['palettes']['filepondUploader'] = '
  */
 $GLOBALS['TL_DCA']['tl_form_field']['subpalettes']['chunkUploads'] = 'chunkSize';
 $GLOBALS['TL_DCA']['tl_form_field']['subpalettes']['imgResize'] = 'imgResizeWidth,imgResizeHeight,imgResizeBrowser';
-$GLOBALS['TL_DCA']['tl_form_field']['subpalettes']['imgResizeBrowser'] = 'imgResizeModeBrowser,imgResizeUpscaleBrowser';
+$GLOBALS['TL_DCA']['tl_form_field']['subpalettes']['imgResizeBrowser'] = 'imgResizeModeBrowser,imgResizeQualityBrowser,imgResizeUpscaleBrowser';
 
 PaletteManipulator::create()
     ->addField('addToDbafs,directUpload', 'storeFile')
@@ -133,6 +133,14 @@ $GLOBALS['TL_DCA']['tl_form_field']['fields']['imgResizeModeBrowser'] = [
     'options'   => ['force', 'cover', 'contain'],
     'eval'      => ['mandatory' => true, 'rgxp' => 'alpha', 'tl_class' => 'w33'],
     'sql'       => "varchar(255) NOT NULL default 'contain'",
+];
+
+$GLOBALS['TL_DCA']['tl_form_field']['fields']['imgResizeQualityBrowser'] = [
+    'exclude'   => true,
+    'inputType' => 'text',
+    'default'   => 85,
+    'eval'      => ['mandatory' => true, 'rgxp' => 'natural', 'minval' => 1, 'maxval' => 100, 'maxlength' => 3, 'tl_class' => 'w33'],
+    'sql'       => "tinyint(3) unsigned NOT NULL default 85",
 ];
 
 $GLOBALS['TL_DCA']['tl_form_field']['fields']['imgResizeUpscaleBrowser'] = [

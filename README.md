@@ -108,6 +108,7 @@ $form->addFormField('filepond', [
         // Client side image resizing
         'imgResizeBrowser' => true, // Allow client side image resizing! 'imgResize' must be set to "true" as well!
         'imgResizeModeBrowser' => 'contain', // Use "contain", "force", "contain" -> https://pqina.nl/filepond/docs/api/plugins/image-resize/#properties
+        'imgResizeQualityBrowser' => 85, // Output quality (1-100) used when re-encoding resized images in the browser
         'imgResizeUpscaleBrowser' => false, // Set to false to prevent upscaling of images smaller than the target size
     ],
 ]);

@@ -1,6 +1,6 @@
 {
   "filepond.css": "/bundles/markocupiccontaofileponduploader/filepond.e17e7a98.css",
-  "filepond.js": "/bundles/markocupiccontaofileponduploader/filepond.c3256117.js",
+  "filepond.js": "/bundles/markocupiccontaofileponduploader/filepond.98eeb4a7.js",
   "filepond/locale/km-km.js": "/bundles/markocupiccontaofileponduploader/filepond/locale/km-km.af6ad1a1.js",
   "filepond/locale/el-el.js": "/bundles/markocupiccontaofileponduploader/filepond/locale/el-el.f834774c.js",
   "filepond/locale/am-et.js": "/bundles/markocupiccontaofileponduploader/filepond/locale/am-et.1983a44f.js",
@@ -48,5 +48,5 @@
   "filepond/locale/zh-tw.js": "/bundles/markocupiccontaofileponduploader/filepond/locale/zh-tw.cfcb1c1d.js",
   "filepond/locale/zh-cn.js": "/bundles/markocupiccontaofileponduploader/filepond/locale/zh-cn.91a94d63.js",
   "filepond.e17e7a98.css.map": "/bundles/markocupiccontaofileponduploader/filepond.e17e7a98.css.map",
-  "filepond.c3256117.js.map": "/bundles/markocupiccontaofileponduploader/filepond.c3256117.js.map"
+  "filepond.98eeb4a7.js.map": "/bundles/markocupiccontaofileponduploader/filepond.98eeb4a7.js.map"
 }

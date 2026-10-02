@@ -87,6 +87,7 @@ class FilepondFrontendWidget extends Widget implements UploadableWidgetInterface
                 break;
 
             case 'parallelUploads':
+            case 'imgResizeQualityBrowser':
             case 'maxImageWidth':
             case 'maxImageHeight':
                 $this->arrConfiguration[$strKey] = (int) ($varValue ?? 0);
@@ -98,6 +99,10 @@ class FilepondFrontendWidget extends Widget implements UploadableWidgetInterface
                 if (true === ((bool) $varValue)) {
                     if (!isset($this->arrConfiguration['imgResizeModeBrowser'])) {
                         $this->arrConfiguration['imgResizeModeBrowser'] = 'contain';
+                    }
+
+                    if (!isset($this->arrConfiguration['imgResizeQualityBrowser'])) {
+                        $this->arrConfiguration['imgResizeQualityBrowser'] = 85;
                     }
 
                     if (!isset($this->arrConfiguration['imgResizeUpscaleBrowser'])) {

@@ -218,8 +218,20 @@ export default class extends Controller {
         this.#options.minFileSize = cfg.minFileSizeLimit;
         this.#options.maxFileSize = cfg.maxFileSizeLimit;
 
+        // The image transform plugin is registered globally and FilePond enables it by default.
+        // Disable it explicitly, otherwise images are re-encoded in the browser even if
+        // client side resizing is turned off, and the size validator checks the re-encoded
+        // file instead of the original (see #5).
+        this.#options.allowImageResize = false;
+        this.#options.allowImageTransform = false;
+
         if (cfg.imgResize && cfg.imgResizeBrowser && cfg.imgResizeWidth > 0 && cfg.imgResizeHeight > 0) {
+            const quality = parseInt(cfg.imgResizeQualityBrowser, 10);
+
             this.#options.allowImageResize = true;
+            this.#options.allowImageTransform = true;
+            this.#options.imageTransformOutputQuality = quality >= 1 && quality <= 100 ? quality : 85;
+            this.#options.imageTransformOutputQualityMode = 'optional';
             this.#options.imageResizeTargetWidth = cfg.imgResizeWidth;
             this.#options.imageResizeTargetHeight = cfg.imgResizeHeight;
             this.#options.imageResizeMode = cfg.imgResizeModeBrowser;
