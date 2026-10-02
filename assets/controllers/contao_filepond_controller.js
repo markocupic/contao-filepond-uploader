@@ -230,7 +230,7 @@ export default class extends Controller {
 
             this.#options.allowImageResize = true;
             this.#options.allowImageTransform = true;
-            this.#options.imageTransformOutputQuality = quality >= 1 && quality <= 100 ? quality : 85;
+            this.#options.imageTransformOutputQuality = quality >= 30 && quality <= 100 ? quality : 85;
             this.#options.imageTransformOutputQualityMode = 'optional';
             this.#options.imageResizeTargetWidth = cfg.imgResizeWidth;
             this.#options.imageResizeTargetHeight = cfg.imgResizeHeight;

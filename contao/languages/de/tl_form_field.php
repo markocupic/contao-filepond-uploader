@@ -76,7 +76,7 @@ $GLOBALS['TL_LANG']['tl_form_field']['imgResizeModeBrowser'] = [
     'Wählen Sie zwischen \'force\', \'cover\', oder \'contain\'. Bei Force wird das Seitenverhältnis des Bildes ignoriert. Cover berücksichtigt das Seitenverhältnis und skaliert so, dass es die Zieldimensionen ausfüllt. Contain beachtet ebenfalls das Seitenverhältnis und passt das Bild in die festgelegten Abmessungen ein. Bei allen drei Einstellungen werden Bilder hochskaliert, wenn sie kleiner sind als die angegebenen Zielmaße.',
 ];
 $GLOBALS['TL_LANG']['tl_form_field']['imgResizeQualityBrowser'] = [
-    'Bildqualität (1–100)',
+    'Bildqualität (30–100)',
     'Hier können Sie die Qualität festlegen, mit der verkleinerte Bilder im Browser neu kodiert werden (JPEG/WebP). Standard: 85.',
 ];
 $GLOBALS['TL_LANG']['tl_form_field']['imgResizeUpscaleBrowser'] = [

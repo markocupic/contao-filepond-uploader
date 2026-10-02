@@ -132,7 +132,7 @@ class UploaderConfig
     private string $imgResizeModeBrowser = 'contain';
 
     /**
-     * Client side image resize output quality (1-100).
+     * Client side image resize output quality (30-100).
      */
     private int $imgResizeQualityBrowser = 85;
 
@@ -664,7 +664,7 @@ class UploaderConfig
     }
 
     /**
-     * Get the client side image resize output quality (1-100).
+     * Get the client side image resize output quality (30-100).
      */
     public function getBrowserImageResizeQuality(): int
     {
@@ -672,11 +672,11 @@ class UploaderConfig
     }
 
     /**
-     * Set the client side image resize output quality (1-100).
+     * Set the client side image resize output quality (30-100).
      */
     public function setBrowserImageResizeQuality(int $imgResizeQualityBrowser): self
     {
-        $this->imgResizeQualityBrowser = max(1, min(100, $imgResizeQualityBrowser));
+        $this->imgResizeQualityBrowser = max(30, min(100, $imgResizeQualityBrowser));
 
         return $this;
     }

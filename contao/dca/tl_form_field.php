@@ -137,10 +137,11 @@ $GLOBALS['TL_DCA']['tl_form_field']['fields']['imgResizeModeBrowser'] = [
 
 $GLOBALS['TL_DCA']['tl_form_field']['fields']['imgResizeQualityBrowser'] = [
     'exclude'   => true,
-    'inputType' => 'text',
+    'inputType' => 'select',
+    'options'   => range(30, 100, 5),
     'default'   => 85,
-    'eval'      => ['mandatory' => true, 'rgxp' => 'natural', 'minval' => 1, 'maxval' => 100, 'maxlength' => 3, 'tl_class' => 'w33'],
-    'sql'       => "tinyint(3) unsigned NOT NULL default 85",
+    'eval'      => ['mandatory' => true, 'tl_class' => 'w33'],
+    'sql'       => "smallint(5) unsigned NOT NULL default 85",
 ];
 
 $GLOBALS['TL_DCA']['tl_form_field']['fields']['imgResizeUpscaleBrowser'] = [
