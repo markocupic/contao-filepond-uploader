@@ -18,9 +18,8 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 
 class FilepondExceptionNormalizer implements FilepondExceptionNormalizerInterface
 {
-    public function __construct(
-        private TranslatorInterface $translator,
-    ) {
+    public function __construct(private TranslatorInterface $translator)
+    {
     }
 
     public function supports(\Throwable $exception): bool

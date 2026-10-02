@@ -20,9 +20,8 @@ use Markocupic\ContaoFilepondUploader\CleanUp\PurgeTempFolder;
 #[AsCronJob('hourly')]
 readonly class PurgeTempFolderCron
 {
-    public function __construct(
-        private PurgeTempFolder $purgeTempFolder,
-    ) {
+    public function __construct(private PurgeTempFolder $purgeTempFolder)
+    {
     }
 
     public function __invoke(): void

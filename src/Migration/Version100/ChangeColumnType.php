@@ -23,9 +23,8 @@ class ChangeColumnType extends AbstractMigration
 {
     private const MIGRATION_TEXT = "Column type of tl_form_field.chunkSize changed from 'varchar(255)' to 'integer'.";
 
-    public function __construct(
-        private readonly Connection $connection,
-    ) {
+    public function __construct(private readonly Connection $connection)
+    {
     }
 
     /**

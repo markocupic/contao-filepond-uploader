@@ -21,9 +21,8 @@ use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 #[Autoconfigure(public: true)]
 readonly class Validator
 {
-    public function __construct(
-        private FileUploader $fileUploader,
-    ) {
+    public function __construct(private FileUploader $fileUploader)
+    {
     }
 
     /**

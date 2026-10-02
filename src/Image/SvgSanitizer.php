@@ -19,9 +19,8 @@ use Symfony\Component\Filesystem\Filesystem;
 
 readonly class SvgSanitizer
 {
-    public function __construct(
-        private Filesystem $filesystem,
-    ) {
+    public function __construct(private Filesystem $filesystem)
+    {
     }
 
     /**

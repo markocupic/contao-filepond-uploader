@@ -20,9 +20,8 @@ use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 #[Autoconfigure(public: true)]
 readonly class AssetsManager
 {
-    public function __construct(
-        private Packages $packages,
-    ) {
+    public function __construct(private Packages $packages)
+    {
     }
 
     /**
