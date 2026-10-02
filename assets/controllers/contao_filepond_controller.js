@@ -217,9 +217,14 @@ export default class extends Controller {
         this.#options.allowFileSizeValidation = true;
         this.#options.minFileSize = cfg.minFileSizeLimit;
         this.#options.maxFileSize = cfg.maxFileSizeLimit;
+        this.#options.allowImageTransform = false;
 
         if (cfg.imgResize && cfg.imgResizeBrowser && cfg.imgResizeWidth > 0 && cfg.imgResizeHeight > 0) {
             this.#options.allowImageResize = true;
+            this.#options.allowImageTransform = true;
+            this.#options.imageTransformOutputQuality = 85;      // sonst Browser-Standard ~92
+            this.#options.imageTransformOutputQualityMode = 'optional'; // nur bei echter Verkleinerung neu kodieren
+ 
             this.#options.imageResizeTargetWidth = cfg.imgResizeWidth;
             this.#options.imageResizeTargetHeight = cfg.imgResizeHeight;
             this.#options.imageResizeMode = cfg.imgResizeModeBrowser;
