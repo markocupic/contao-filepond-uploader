@@ -9,6 +9,13 @@
 This extension provides a file uploader widget for the Contao form generator.
 You can use **client side image resizing** and **chunkUploads** for uploading large files.
 
+## Requirements
+
+- Contao 5.3 or later, including Contao 6
+- PHP 8.2 or later
+
+The widget is rendered with the Twig template `filepond_uploader_frontend.html.twig`. The legacy `.html5` template has been removed, as Contao 6 no longer supports `.html5` templates.
+
 ## Create the form widget from DCA
 
 For custom use cases you can embed the widget within a Codefog Haste Form (see below).
