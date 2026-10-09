@@ -25,7 +25,7 @@
         "php": "^8.2",
         "contao/core-bundle": "^5.3 || ^6.0",
         "doctrine/dbal": "^3.6 || ^4.0",
-        "enshrined/svg-sanitize": "^0.22 || ^1.0",
+        "enshrined/svg-sanitize": "^1.0",
         "psr/log": "^1.1 || ^2.0 || ^3.0",
         "symfony/asset": "^6.4 || ^7.0 || ^8.0",
         "symfony/config": "^6.4 || ^7.0 || ^8.0",
@@ -64,15 +64,6 @@
             "php-http/discovery": false,
             "contao-community-alliance/composer-plugin": true,
             "dealerdirect/phpcodesniffer-composer-installer": true
-        },
-        "policy": {
-            "advisories": {
-                "ignore-id": [
-                    "PKSA-8j6w-3kr7-s9xk",
-                    "PKSA-6j95-1jtb-x6wc",
-                    "PKSA-cbx2-m9db-bmzd"
-                ]
-            }
         }
     },
     "extra": {
